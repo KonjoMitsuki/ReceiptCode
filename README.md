@@ -4,7 +4,7 @@
 
 - プロジェクト名: **Receipt2JAN**
 - 対象端末: iPhone Safari / Android Chrome（店舗業務での私物端末利用は店舗管理者の許可を得てください）
-- 配信: GitHub Pages（サブパス配信に対応）
+- 配信: GitHub Pages（公開URL: <https://konjomitsuki.github.io/ReceiptCode/>、サブパス配信に対応）
 - **サーバー処理・ログイン・DB・外部OCR APIはありません。**レシート画像とOCR結果は端末のブラウザ内だけで処理します。
 
 > [!IMPORTANT]
@@ -142,7 +142,9 @@ npm run test:e2e
 
 `.github/workflows/deploy.yml` が `main` へのpush時にビルドし、Pagesへ配信します。
 
-1. リポジトリの **Settings → Pages → Build and deployment → Source** を **GitHub Actions** にします。
+現在の公開URLは **<https://konjomitsuki.github.io/ReceiptCode/>** です。2026-10-20 に GitHub Actions でデプロイし、公開URL上で手入力からEAN-13バーコード表示まで確認しています。
+
+1. リポジトリの **Settings → Pages → Build and deployment → Source** を **GitHub Actions** にします（「Deploy from a branch」ではビルド済みの `dist` が配信されません）。
 2. `main` にpushします。
 3. ワークフロー内で `BASE_PATH=/${{ github.event.repository.name }}/` を渡すため、リポジトリ名のサブパスで配信されます。
 
@@ -171,6 +173,8 @@ npm run test:e2e
 | `npm run test:e2e` | 5テスト すべて成功（Playwright Chromium / Pixel 7相当。本番ビルドのサブパス配信を含む） |
 | `npm run build` | 成功。JS 344.76 kB（gzip 100.97 kB）、CSS 15.55 kB（gzip 4.08 kB） |
 | `npm audit` | 0 vulnerabilities（インストール時点） |
+| GitHub Actions（CI / Deploy） | 成功（2026-10-20） |
+| 公開URLのスモーク確認 | 手入力 → 確認 → EAN-13バーコード表示、CSS / JS資産の読み込み、同一オリジン以外へのリクエストなし |
 
 合成レシート画像（`tests/fixtures/receipt-sample.png`、架空データ）を使った**実際のTesseract.js OCRのスモーク確認**もローカルで実施しました。
 
