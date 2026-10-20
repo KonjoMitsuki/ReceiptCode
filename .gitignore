@@ -1,0 +1,36 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+dist-ssr/
+*.local
+
+# test output
+coverage/
+playwright-report/
+test-results/
+blob-report/
+playwright/.cache/
+
+# local receipt images / OCR output must never be committed
+tests/fixtures/local/
+*.receipt.local.*
+
+# locally downloaded OCR language data
+*.traineddata
+*.traineddata.gz
+
+# environment
+.env
+.env.local
+.env.*.local
+
+# editor / OS
+.DS_Store
+.vscode/
+*.tsbuildinfo
+*.log
+
+# Windows download metadata
+*Zone.Identifier
