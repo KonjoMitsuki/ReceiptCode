@@ -44,6 +44,14 @@ export default tseslint.config(
     languageOptions: { globals: globals.node },
   },
   {
+    // Vendored shadcn M3E registry components: keep their upstream style
+    // intact instead of enforcing this project's fast-refresh rules.
+    files: ['src/components/m3e/**/*.{ts,tsx}'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
+  {
     files: ['tests/**/*.{ts,tsx}'],
     languageOptions: { globals: { ...globals.browser, ...globals.node } },
   },

@@ -34,7 +34,7 @@ test('本番ビルドがサブパスで配信され、手入力フローが動�
     .poll(() =>
       page.evaluate(() => getComputedStyle(document.body).backgroundColor),
     )
-    .toBe('rgb(244, 241, 234)');
+    .toBe('rgb(245, 251, 246)');
 
   await page
     .getByRole('button', { name: 'JANを手入力して始める' })

@@ -6,6 +6,9 @@ import {
 import { formatLabel, validateJan } from '../lib/jan';
 import type { ReceiptItem } from '../types/receipt';
 import { useWakeLock } from '../hooks/useWakeLock';
+import { Badge } from './m3e/badge';
+import { Button } from './m3e/button';
+import { Icon } from './m3e/icon';
 
 interface BarcodeViewerProps {
   item: ReceiptItem;
@@ -65,39 +68,63 @@ export function BarcodeViewer({
 
   return (
     <main
-      className={`barcode-screen${focusMode ? ' is-focus' : ''}`}
+      className={`barcode-screen mx-auto flex min-h-dvh w-full max-w-5xl flex-col gap-2 px-3 py-2 sm:px-5 sm:py-4${focusMode ? ' is-focus' : ''}`}
       aria-label="JANバーコード表示"
     >
-      <header className="barcode-topbar">
-        <span className="barcode-counter" aria-live="polite">
-          {index + 1} / {total}
-        </span>
-        <button
+      <header className="barcode-topbar flex items-center justify-between gap-3 px-1">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="barcode-counter font-mono text-title-medium font-semibold tabular-nums">
+            {index + 1} / {total}
+          </span>
+          {format && (
+            <Badge
+              variant="outline"
+              className="hidden border-neutral-300 text-neutral-600 sm:inline-flex"
+            >
+              {formatLabel(format)}
+            </Badge>
+          )}
+        </div>
+        <Button
           type="button"
-          className="button button-secondary button-compact"
+          variant="outlined"
+          size="sm"
+          className="h-11 border-neutral-300 text-neutral-800"
           onClick={() => setFocusMode((current) => !current)}
           aria-pressed={focusMode}
         >
+          <Icon name={focusMode ? 'fullscreen_exit' : 'fullscreen'} size={18} />
           {focusMode ? '集中表示を終了' : '集中表示'}
-        </button>
+        </Button>
       </header>
 
-      <div className="barcode-main">
+      <div className="barcode-main flex flex-1 flex-col items-center justify-center gap-3 py-1">
         {focusMode ? (
-          <p className="focus-name" aria-live="polite">
+          <p
+            className="focus-name text-title-large-emphasized text-center"
+            aria-live="polite"
+          >
             {item.name.trim() || '商品名未認識'}
           </p>
         ) : (
-          <div className="barcode-heading">
-            <p className="eyebrow">
+          <div className="barcode-heading text-center">
+            <p className="mb-1 text-label-large font-semibold text-neutral-500">
               {format ? formatLabel(format) : 'JANバーコード'}
             </p>
-            <h1>{item.name.trim() || '商品名未認識'}</h1>
-            <p className="barcode-confirmed">確認済みの番号です</p>
+            <h1 className="text-headline-small-emphasized break-words text-black">
+              {item.name.trim() || '商品名未認識'}
+            </h1>
+            <p className="mt-1 inline-flex items-center gap-1 text-label-large font-semibold text-primary">
+              <Icon name="verified" size={16} />
+              確認済みの番号です
+            </p>
           </div>
         )}
 
-        <section className="barcode-sheet" aria-label="JANバーコード">
+        <section
+          className="barcode-sheet flex w-full max-w-4xl flex-col items-center gap-1 rounded-2xl border border-neutral-200 bg-white p-2 sm:p-4"
+          aria-label="JANバーコード"
+        >
           <svg
             key={item.jan}
             ref={renderBarcode}
@@ -105,29 +132,37 @@ export function BarcodeViewer({
             aria-label={`${format ?? 'JAN'} バーコード ${item.jan}`}
           />
           {renderError && (
-            <p className="barcode-error" role="alert">
+            <p
+              className="my-2 rounded-xl bg-[#fbeceb] px-3 py-2 text-body-medium font-semibold text-[#9b2c21]"
+              role="alert"
+            >
               {renderError}
             </p>
           )}
-          <p className="barcode-number" aria-label={`JAN ${item.jan}`}>
+          <p
+            className="barcode-number text-[clamp(1.3rem,6vw,2.875rem)] text-black"
+            aria-label={`JAN ${item.jan}`}
+          >
             {item.jan}
           </p>
           {format && (
-            <p className="barcode-format">{formatLabel(format)}</p>
+            <p className="text-label-medium font-semibold tracking-wide text-neutral-500">
+              {formatLabel(format)}
+            </p>
           )}
         </section>
 
         {focusMode ? (
-          <p className="focus-hint">
+          <p className="focus-hint text-center text-body-small text-neutral-500">
             読み取れない場合は、上の番号をレジに手入力してください。
           </p>
         ) : (
           <>
-            <div className="scan-guidance">
-              <p>
+            <div className="barcode-help w-full max-w-xl text-center text-body-small text-neutral-600">
+              <p className="font-semibold text-neutral-800">
                 レジのハンディスキャナーをバーコードに向けてください。
               </p>
-              <ul>
+              <ul className="mt-1 space-y-0.5">
                 <li>画面の明るさを上げてください。</li>
                 <li>横向きにすると大きく表示できます。</li>
                 <li>
@@ -136,7 +171,10 @@ export function BarcodeViewer({
               </ul>
             </div>
             {wakeLockMessage && (
-              <p className="wake-lock-note" role="status">
+              <p
+                className="wake-lock-note max-w-xl text-center text-label-small text-neutral-500"
+                role="status"
+              >
                 {wakeLockMessage}
               </p>
             )}
@@ -144,30 +182,38 @@ export function BarcodeViewer({
         )}
       </div>
 
-      <nav className="barcode-nav" aria-label="商品の切り替え">
-        <button
+      <nav
+        className="barcode-nav grid w-full grid-cols-[1fr_1.15fr_1fr] gap-2 px-1"
+        aria-label="商品の切り替え"
+      >
+        <Button
           type="button"
-          className="button button-secondary"
+          variant="outlined"
+          className="h-12 min-w-0 border-neutral-300 px-2 text-neutral-800"
           disabled={!hasPrevious}
           onClick={onPrevious}
         >
+          <Icon name="arrow_back" size={18} />
           前へ
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className="button button-quiet"
+          variant="text"
+          className="h-12 min-w-0 px-2 text-neutral-800"
           onClick={onClose}
         >
+          <Icon name="list" size={18} />
           一覧に戻る
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className="button button-primary"
+          className="h-12 min-w-0 px-2"
           disabled={!hasNext}
           onClick={onNext}
         >
           次へ
-        </button>
+          <Icon name="arrow_forward" size={18} />
+        </Button>
       </nav>
     </main>
   );

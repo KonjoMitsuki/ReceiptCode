@@ -83,7 +83,7 @@ describe('ItemEditor', () => {
       screen.getByRole('checkbox', {
         name: '商品名とJANを確認しました',
       }),
-    ).toBeDisabled();
+    ).toHaveAttribute('aria-disabled', 'true');
     expect(
       screen.getByText(/チェックデジットが一致しません/),
     ).toBeInTheDocument();

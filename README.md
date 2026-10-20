@@ -24,6 +24,8 @@
 - 結果一覧、商品名 / JAN の編集、確認チェック、行削除、手入力追加
 - 確認済みかつチェックデジット有効なJANのみEAN-13 / EAN-8のSVGバーコード表示
 - 前へ / 次へ、集中表示、Wake Lock（対応環境のみ）、JAN数字の表示
+- M3 ExpressiveベースのUI（shadcn M3E、Tailwind CSS v4、Roboto Flex / JetBrains Mono）
+- ライト / ダークモード（初回はOS設定に追従、ヘッダーから切り替え）
 - モバイル向けUI（320px幅、横向き、44×44 CSS px目安）
 - 単体 / コンポーネント / E2Eテスト、CI、GitHub Pages配信ワークフロー
 
@@ -33,7 +35,7 @@
 - PWA / オフラインキャッシュ / ホーム画面追加
 - 画像の回転・台形補正・トリミング・コントラスト補正
 - 数字専用OCRの二段階処理、OCR bounding boxを使った高精度対応付け
-- ダークモード、スキャナー別ガイド、OCR精度評価画面
+- スキャナー別ガイド、OCR精度評価画面
 - 共有機能、商品マスタ連携、POS連携
 
 ## 動作環境
@@ -74,6 +76,8 @@ BASE_PATH=/my-repo/ npm run build
 | `npm test` | 単体・コンポーネントテスト（Vitest） |
 | `npm run test:watch` | Vitest ウォッチ |
 | `npm run test:e2e` | Playwright E2E（初回は `npx playwright install --with-deps chromium`） |
+| `npm run gen:icons` | ソース内で使用中のアイコンを `src/components/m3e/icon-data*.ts` へ生成 |
+| `npm run check:icons` | 生成済みアイコンが最新か検証（CI向け） |
 
 ### E2Eテスト
 
@@ -91,6 +95,17 @@ npx playwright install --with-deps chromium
 npm run test:e2e
 ```
 
+### UI / デザインシステム
+
+画面は [shadcn M3E](https://shadcn-m3e.crystaworld.dev/) のコンポーネントとデザイントークンで構成しています。
+
+- `components.json` に M3E レジストリ（`@m3e`）を登録し、`src/components/m3e/` と `src/lib/m3e/` にコンポーネント / トークンを取り込んでいます。ビルド再現性のため、これらはリポジトリ内で管理します。
+- `src/App.tsx` の `M3eProvider` で、シードカラー `#0d5b4a`、`tonalSpot`、Expressiveモーション、`shapeScale: 1` を指定しています。
+- Tailwind CSS v4 を `@tailwindcss/vite` で読み込み、M3Eの型スケール・Elevation・Shapeをそのまま利用します。
+- ダークモードは `ColorModeProvider` が管理し、初回はOS設定に追従します。`index.html` のプリペイントスクリプトでちらつきを防ぎ、ヘッダーのボタンで切り替えられます。
+- バーコード表示画面はスキャナーでの読み取りを優先し、ダークモードでも白背景・黒バーコードを維持します。
+- アイコンは Material Symbols Rounded（Iconify）から使用分だけを `npm run gen:icons` で `src/components/m3e/icon-data*.ts` に生成します（アプリ側42個 + M3E内部17個）。
+
 ## 使い方
 
 1. 「レシートを撮影 / 画像を選択」から画像を選びます。
@@ -102,6 +117,7 @@ npm run test:e2e
 4. 商品ごとに「商品名とJANを確認しました」をチェックします。
 5. 一覧の下にある「確認済みのバーコードを表示」を押すと、確認済み商品のSVGバーコードをまとめて表示します。
 6. 複数商品は「前へ」「次へ」で切り替えます。「集中表示」でナビゲーションを減らせます。読み取れない場合は画面のJAN数字をレジに手入力してください。
+7. ヘッダー右のボタンでライト / ダークモードを切り替えられます。バーコード画面は読み取りやすさのため常に白背景です。
 
 同じJANが複数ある場合も、別明細や数量違いの可能性があるため自動で統合・削除しません。必要に応じて人間が判断してください。
 
@@ -130,6 +146,8 @@ npm run test:e2e
 |---|---|
 | 言語 | TypeScript 5.9.3（strict） |
 | UI | React 19.3.1 + Vite 8.3.4 |
+| デザインシステム | shadcn M3E（Base UI）+ Tailwind CSS v4 + Roboto Flex / JetBrains Mono |
+| アイコン | Material Symbols Rounded（Iconify、使用分のみ生成してバンドル） |
 | OCR | Tesseract.js 7.0.0（`jpn` + `eng`） |
 | バーコード | JsBarcode 3.12.3（SVG、EAN-13 / EAN-8） |
 | テスト | Vitest 5.0.5 + React Testing Library / Playwright 1.64.1 |
@@ -161,7 +179,7 @@ npm run test:e2e
 - 画像は縦横比を保って最大2400pxへ縮小（実機計測前の暫定値）、30MB上限、白背景JPEG（品質0.92）に変換します。HEIC/HEIFは全ブラウザ対応を保証しません。
 - OCRジョブはジョブIDと `AbortController` で競合・キャンセルを処理し、worker等の資源を解放します。
 
-## テストと検証結果（2026-10-20時点）
+## テストと検証結果（2026-10-21時点）
 
 実行済み:
 
@@ -171,8 +189,8 @@ npm run test:e2e
 | `npm run typecheck` | 成功 |
 | `npm test` | 9ファイル / 66テスト すべて成功 |
 | `npm run test:e2e` | 5テスト すべて成功（Playwright Chromium / Pixel 7相当。本番ビルドのサブパス配信を含む） |
-| `npm run build` | 成功。JS 344.76 kB（gzip 100.97 kB）、CSS 15.55 kB（gzip 4.08 kB） |
-| `npm audit` | 0 vulnerabilities（インストール時点） |
+| `npm run build` | 成功。JS 604.70 kB（gzip 167.96 kB）、CSS 112.22 kB（gzip 21.49 kB）、フォント10ファイル 約179 kB |
+| `npm audit --omit=dev` | 0 vulnerabilities（実行時依存）。開発用CLIの `shadcn` 経由に high 7件の推移的依存警告がありますが、バンドルには含まれません |
 | GitHub Actions（CI / Deploy） | 成功（2026-10-20） |
 | 公開URLのスモーク確認 | 手入力 → 確認 → EAN-13バーコード表示、CSS / JS資産の読み込み、同一オリジン以外へのリクエストなし |
 
@@ -196,6 +214,7 @@ npm run test:e2e
 - OCRはレシートの印字・撮影条件により誤認識します。チェックデジットが一致しても別商品の番号である可能性があります。
 - 実店舗のレシート画像は精度評価に使わないでください。使う場合はローカルに置き、Gitの追跡対象外（`tests/fixtures/local/` など）にしてください。
 - EAN-13 / EAN-8 以外のバーコード規格（CODE128など）は対象外です。
+- M3Eコンポーネント・アイコン・フォントの同梱により、初期バンドルは旧UIより大きくなっています（JS 604.70 kB / gzip 167.96 kB）。Viteの500 kB警告が出ますが、画面遷移はすべてクライアント内で完結します。今後の最適化候補はOCRエンジンの動的importと画面単位のコード分割です。
 - 初回OCRは言語データの取得に時間がかかり、通信失敗時は再試行が必要です。
 - Wake Lock 非対応ブラウザでは、端末の自動ロック設定を手動で調整する必要があります。
 - 画像の最大2400px・30MBは実機計測前の暫定値です。
@@ -211,18 +230,27 @@ npm run test:e2e
 │   └── deploy.yml             # GitHub Pages 配信
 ├── docs/
 │   └── Receipt2JAN_Design_Spec.md
+├── public/
+│   └── favicon.svg
+├── scripts/
+│   └── icons.mjs              # HugeiconsのSVG生成
 ├── src/
-│   ├── components/            # 各画面・入力部品
+│   ├── components/
+│   │   ├── m3e/               # 取り込んだM3E UI・生成済みアイコン
+│   │   └── ...                # 各画面・入力部品
 │   ├── features/receipt/      # JAN抽出・検証・商品名対応付け・画面状態
 │   ├── hooks/
 │   ├── lib/                   # jan / barcode / ocr / imageProcessing
+│   │   ├── m3e/               # M3Eトークン・テーマ・ユーティリティ
 │   │   └── testing/           # E2E用固定OCRエンジン
+│   ├── styles.css             # Tailwind v4 / M3E / バーコード画面CSS
 │   └── types/
 ├── tests/
 │   ├── unit/                  # 純粋関数・ロジック
 │   ├── components/            # UI
 │   ├── e2e/                   # Playwright
 │   └── fixtures/              # 架空レシート画像と生成スクリプト
+├── components.json            # shadcn / M3Eレジストリ設定
 ├── playwright.config.ts
 ├── vite.config.ts
 └── package.json

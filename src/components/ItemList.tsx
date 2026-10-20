@@ -5,6 +5,18 @@ import {
 } from '../features/receipt/itemOperations';
 import { validateJan } from '../lib/jan';
 import type { ReceiptItem } from '../types/receipt';
+import { Alert, AlertDescription, AlertTitle } from './m3e/alert';
+import { Badge } from './m3e/badge';
+import { Button } from './m3e/button';
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from './m3e/empty';
+import { Icon } from './m3e/icon';
 import { ItemEditor } from './ItemEditor';
 import { ManualAddForm } from './ManualAddForm';
 
@@ -57,86 +69,114 @@ export function ItemList({
   const confirmedCount = items.filter((item) => item.confirmed).length;
 
   return (
-    <main className="screen review-screen">
-      <header className="screen-header review-header">
-        <div>
-          <p className="eyebrow">ステップ 3 / 3</p>
-          <h1>読み取り結果</h1>
-          <p className="lead">
+    <main className="screen review-screen mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 pt-5 pb-8 sm:px-6 sm:pt-8">
+      <header className="screen-header review-header flex flex-wrap items-start gap-3">
+        <div className="min-w-0 flex-1 basis-60">
+          <p className="text-label-large font-semibold text-primary">
+            ステップ 3 / 3
+          </p>
+          <h1 className="mt-1 text-headline-medium-emphasized sm:text-headline-large-emphasized">
+            読み取り結果
+          </h1>
+          <p className="lead mt-2 max-w-xl text-body-large text-on-surface-variant">
             商品ごとに商品名とJANを確認してください。確認済みの番号だけバーコードを表示できます。
           </p>
         </div>
-        <button
+        <Button
           type="button"
-          className="button button-secondary button-compact"
+          variant="outlined"
+          size="sm"
           onClick={onChooseAnother}
+          className="shrink-0"
         >
+          <Icon name="photo_library" size={18} />
           別の画像
-        </button>
+        </Button>
       </header>
 
-      <div className="notice notice-warning">
-        <strong>OCRの結果です。スキャンの前に必ず確認してください。</strong>
-        <span>
+      <Alert variant="tertiary" role="note">
+        <Icon name="warning" size={20} />
+        <AlertTitle>OCRの結果です。スキャンの前に必ず確認してください。</AlertTitle>
+        <AlertDescription>
           チェックデジットが一致していても、別の商品の番号を読み取っている可能性があります。
-        </span>
-      </div>
+        </AlertDescription>
+      </Alert>
 
       {items.length > 0 && (
-        <div className="summary-row" aria-label="確認状況">
-          <span className="summary-chip">{items.length}件</span>
-          <span className="summary-chip summary-valid">
+        <div
+          className="summary-row flex flex-wrap items-center gap-1.5"
+          aria-label="確認状況"
+        >
+          <Badge variant="outline" className="bg-surface-container">
+            {items.length}件
+          </Badge>
+          <Badge className="border-transparent bg-primary-container text-on-primary-container">
             有効 {validCount}
-          </span>
-          <span className="summary-chip summary-review">
+          </Badge>
+          <Badge className="border-transparent bg-tertiary-container text-on-tertiary-container">
             要確認 {reviewCount}
-          </span>
-          <span className="summary-chip summary-invalid">
+          </Badge>
+          <Badge className="border-transparent bg-error-container text-on-error-container">
             無効 {invalidCount}
-          </span>
-          <span className="summary-chip summary-confirmed">
+          </Badge>
+          <Badge variant="outline" className="border-primary/35 text-primary">
+            <Icon name="check" size={14} />
             確認済み {confirmedCount}
-          </span>
+          </Badge>
         </div>
       )}
 
       {items.length === 0 ? (
-        <section className="empty-card">
-          <span className="empty-mark" aria-hidden="true">
-            0
-          </span>
-          <h2>JAN候補を検出できませんでした</h2>
-          <p>
-            レシートの写り方や印字によっては読み取れないことがあります。JANを手入力するか、画像を撮り直してください。
-          </p>
-          <div className="stack-actions">
-            <button
+        <Empty className="rounded-3xl border-outline-variant bg-surface-container-low py-10">
+          <EmptyHeader>
+            <EmptyMedia variant="icon" className="size-14 rounded-full">
+              <Icon name="search_off" size={28} />
+            </EmptyMedia>
+            <EmptyTitle>
+              <h2 className="text-headline-small-emphasized">
+                JAN候補を検出できませんでした
+              </h2>
+            </EmptyTitle>
+            <EmptyDescription>
+              レシートの写り方や印字によっては読み取れないことがあります。JANを手入力するか、画像を撮り直してください。
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button
               type="button"
-              className="button button-primary"
+              size="md"
+              className="w-full"
               onClick={() => onManualAddOpenChange(true)}
             >
+              <Icon name="keyboard" size={20} />
               JANを手入力で追加
-            </button>
+            </Button>
             {hasPreparedImage && (
-              <button
+              <Button
                 type="button"
-                className="button button-secondary"
+                variant="outlined"
+                size="md"
+                className="h-auto min-h-14 w-full whitespace-normal px-4 py-2.5 text-center"
                 onClick={onRetryOcr}
               >
+                <Icon name="refresh" size={20} />
                 同じ画像でもう一度読み取る
-              </button>
+              </Button>
             )}
-            <button
+            <Button
               type="button"
-              className="button button-secondary"
+              variant="text"
+              size="md"
+              className="w-full"
               onClick={onChooseAnother}
             >
+              <Icon name="photo_library" size={20} />
               別の画像を選ぶ
-            </button>
-          </div>
-        </section>
+            </Button>
+          </EmptyContent>
+        </Empty>
       ) : (
-        <ul className="item-list">
+        <ul className="item-list grid gap-3">
           {items.map((item) => (
             <ItemEditor
               key={item.id}
@@ -151,17 +191,19 @@ export function ItemList({
       )}
 
       {items.length > 0 && (
-        <div className="bulk-actions">
-          <button
+        <div className="bulk-actions rounded-2xl border border-outline-variant bg-surface-container-high p-3 shadow-elevation-1">
+          <Button
             type="button"
-            className="button button-primary compact-primary"
+            size="md"
+            className="compact-primary h-auto min-h-14 w-full whitespace-normal px-4 py-2.5 text-center"
             disabled={scannable.length === 0}
             onClick={() => onShowBarcode(scannable[0].id)}
           >
+            <Icon name="barcode" size={22} />
             確認済みのバーコードを表示（{scannable.length}件）
-          </button>
+          </Button>
           {scannable.length === 0 && (
-            <p className="hint">
+            <p className="hint mt-2 text-center text-body-small text-on-surface-variant">
               各商品の「商品名とJANを確認しました」にチェックを入れると、まとめて表示できます。
             </p>
           )}
@@ -174,16 +216,18 @@ export function ItemList({
           onCancel={() => onManualAddOpenChange(false)}
         />
       ) : (
-        <button
+        <Button
           type="button"
-          className="button button-secondary add-item-button"
+          variant="outlined"
+          size="md"
+          className="add-item-button w-full"
           onClick={() => onManualAddOpenChange(true)}
         >
           ＋ 手入力で商品を追加
-        </button>
+        </Button>
       )}
 
-      <p className="hint review-footer-hint">
+      <p className="hint review-footer-hint text-body-small text-on-surface-variant">
         同じJANが複数ある場合も、別明細の可能性があるため自動では統合・削除しません。
       </p>
     </main>
