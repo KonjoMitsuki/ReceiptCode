@@ -23,7 +23,8 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'npm run dev:e2e -- --port 4173 --strictPort',
+      command:
+        'npm run dev:e2e -- --host 127.0.0.1 --port 4173 --strictPort',
       url: baseURL,
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
@@ -31,7 +32,8 @@ export default defineConfig({
     {
       // 本番ビルドをサブパスで配信し、静的資産と画面遷移を検証する。
       // 常に現在のソースからビルドし、古い成果物でテストしない。
-      command: 'npm run build && npm run preview -- --port 4175 --strictPort',
+      command:
+        'npm run build && npm run preview -- --host 127.0.0.1 --port 4175 --strictPort',
       url: previewBaseURL,
       reuseExistingServer: false,
       timeout: 180_000,
