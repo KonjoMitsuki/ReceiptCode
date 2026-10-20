@@ -865,14 +865,22 @@ a {
   font-size: 11px;
 }
 
-.item-actions {
+.item-delete {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 6px 9px;
+  border-radius: 9px;
+  font-size: 12px;
+}
+
+.bulk-actions {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
 }
 
-.item-actions .button {
-  min-height: 50px;
+.bulk-actions .hint {
+  margin: 0;
+  text-align: center;
 }
 
 .manual-form {
@@ -1152,32 +1160,393 @@ a {
 }
 
 @media (max-width: 380px) {
+  .barcode-number {
+    letter-spacing: 0.035em;
+  }
+}
+
+/* スマートフォン: 余白・行間・入力欄を詰め、1画面で見渡せる情報量を増やす。
+   タップ領域は仕様どおり44px以上を確保する。 */
+@media (max-width: 699px) {
   .app {
-    padding-right: 12px;
-    padding-left: 12px;
+    padding:
+      max(6px, env(safe-area-inset-top))
+      max(12px, env(safe-area-inset-right))
+      max(12px, env(safe-area-inset-bottom))
+      max(12px, env(safe-area-inset-left));
   }
 
-  .upload-card,
-  .manual-form,
-  .item-card {
-    padding: 14px;
+  .app-header {
+    gap: 8px;
+    padding: 2px 0 6px;
+  }
+
+  .brand-mark {
+    width: 24px;
+    height: 20px;
+  }
+
+  .brand-name {
+    font-size: 15px;
+  }
+
+  .brand-tag {
+    padding: 3px 7px;
+    font-size: 10px;
+  }
+
+  .screen {
+    gap: 12px;
+    padding: 6px 0 4px;
+  }
+
+  .app-footer {
+    margin-top: 16px;
+    padding-top: 10px;
+    font-size: 10px;
+  }
+
+  .eyebrow {
+    margin-bottom: 4px;
+    font-size: 11px;
+  }
+
+  .lead {
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .hint {
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
+  .hero {
+    padding: 4px 2px 0;
+  }
+
+  .hero h1 {
+    margin-bottom: 8px;
+    font-size: clamp(1.5rem, 6.5vw, 2rem);
+    line-height: 1.15;
+  }
+
+  .upload-card {
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .upload-card .hint {
+    margin-top: 8px;
+  }
+
+  .manual-start-button {
+    margin-top: 2px;
+  }
+
+  .section-title {
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+
+  .button {
+    min-height: 44px;
+    padding: 9px 14px;
+    border-radius: 11px;
+    font-size: 14px;
+  }
+
+  .button-large {
+    min-height: 50px;
+    padding: 11px 16px;
+    border-radius: 13px;
+    font-size: 15px;
+  }
+
+  .button-compact {
+    min-height: 44px;
+    padding: 7px 11px;
+    font-size: 12px;
+  }
+
+  .stack-actions {
+    gap: 8px;
+  }
+
+  .screen-header h1 {
+    margin-bottom: 4px;
+    font-size: clamp(1.35rem, 5.6vw, 1.7rem);
+  }
+
+  .center-screen h1 {
+    font-size: 20px;
+  }
+
+  .spinner {
+    width: 36px;
+    height: 36px;
+    border-width: 3px;
+  }
+
+  .flow-steps {
+    gap: 6px;
   }
 
   .flow-steps li {
-    padding: 10px 7px;
+    flex-direction: row;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 7px;
+    border-radius: 11px;
+    font-size: 10px;
+  }
+
+  .step-number {
+    width: 19px;
+    height: 19px;
+    flex: 0 0 auto;
+    font-size: 10px;
+  }
+
+  .privacy-note,
+  .notice {
+    gap: 2px;
+    padding: 10px 12px;
+    border-radius: 11px;
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
+  .privacy-note strong,
+  .notice-warning strong {
+    font-size: 12px;
+  }
+
+  .preview-frame {
+    max-height: 44vh;
+    padding: 6px;
+    border-radius: 14px;
+  }
+
+  .preview-frame img {
+    max-height: calc(44vh - 12px);
+    border-radius: 8px;
+  }
+
+  .image-meta {
+    margin-top: -6px;
+    font-size: 10px;
   }
 
   .processing-card {
-    grid-template-columns: 72px minmax(0, 1fr);
-    padding: 13px;
+    grid-template-columns: 68px minmax(0, 1fr);
+    gap: 11px;
+    padding: 12px;
+    border-radius: 14px;
   }
 
   .processing-thumb {
-    height: 96px;
+    height: 88px;
+    border-radius: 9px;
   }
 
-  .barcode-number {
-    letter-spacing: 0.035em;
+  .progress-steps {
+    margin-bottom: 8px;
+  }
+
+  .progress-steps li {
+    padding-bottom: 3px;
+    border-bottom-width: 2px;
+    font-size: 10px;
+  }
+
+  .progress-message {
+    min-height: 2.8em;
+    margin-bottom: 6px;
+    font-size: 12px;
+  }
+
+  .progress-track {
+    height: 8px;
+  }
+
+  .progress-percent {
+    margin-top: 3px;
+    font-size: 10px;
+  }
+
+  .error-card {
+    gap: 8px;
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .error-mark {
+    width: 34px;
+    height: 34px;
+    font-size: 18px;
+  }
+
+  .error-card h1 {
+    font-size: 19px;
+  }
+
+  .error-card p {
+    font-size: 12px;
+    line-height: 1.55;
+  }
+
+  .review-header {
+    gap: 8px;
+    align-items: center;
+  }
+
+  .review-header > div {
+    flex: 1 1 200px;
+  }
+
+  .summary-row {
+    gap: 5px;
+  }
+
+  .summary-chip {
+    padding: 3px 7px;
+    font-size: 10px;
+  }
+
+  .item-list {
+    gap: 9px;
+  }
+
+  .item-card {
+    gap: 8px;
+    padding: 12px;
+    border-left-width: 3px;
+    border-radius: 14px;
+  }
+
+  .item-card-top {
+    gap: 5px;
+  }
+
+  .badge-row {
+    gap: 4px;
+  }
+
+  .badge {
+    min-height: 21px;
+    padding: 1px 7px;
+    font-size: 10px;
+  }
+
+  .meta-text {
+    font-size: 9px;
+  }
+
+  .field {
+    gap: 3px;
+  }
+
+  .field label {
+    font-size: 11px;
+  }
+
+  .field input {
+    min-height: 44px;
+    padding: 8px 10px;
+    border-radius: 9px;
+  }
+
+  .jan-input {
+    font-size: 17px !important;
+  }
+
+  .field-hint {
+    font-size: 10px;
+    line-height: 1.4;
+  }
+
+  .status-detail {
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
+  .warning-list {
+    gap: 3px;
+    padding: 7px 9px 7px 24px;
+    border-radius: 9px;
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
+  .confirm-row {
+    min-height: 44px;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 10px;
+    font-size: 13px;
+  }
+
+  .confirm-row input {
+    width: 22px;
+    height: 22px;
+  }
+
+  .confirm-hint {
+    margin-top: -4px;
+    font-size: 10px;
+  }
+
+  .item-delete {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+
+  .bulk-actions {
+    gap: 6px;
+  }
+
+  .manual-form {
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .manual-form .field {
+    margin-top: 9px;
+  }
+
+  .form-error {
+    margin-top: 9px;
+    padding: 7px 9px;
+    font-size: 12px;
+  }
+
+  .form-actions {
+    gap: 6px;
+    margin-top: 12px;
+  }
+
+  .empty-card {
+    padding: 18px 14px;
+    border-radius: 14px;
+  }
+
+  .empty-mark {
+    width: 38px;
+    height: 38px;
+    margin-bottom: 8px;
+    font-size: 17px;
+  }
+
+  .empty-card h2 {
+    margin-bottom: 6px;
+    font-size: 17px;
+  }
+
+  .empty-card p {
+    margin-bottom: 14px;
+    font-size: 12px;
+    line-height: 1.55;
   }
 }
 

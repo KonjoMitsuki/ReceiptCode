@@ -7,7 +7,6 @@ interface ItemEditorProps {
   onUpdate: (patch: Partial<Pick<ReceiptItem, 'name' | 'jan'>>) => void;
   onDelete: () => void;
   onToggleConfirm: () => void;
-  onShowBarcode: () => void;
 }
 
 function statusFor(item: ReceiptItem): ValidationState {
@@ -41,12 +40,10 @@ export function ItemEditor({
   onUpdate,
   onDelete,
   onToggleConfirm,
-  onShowBarcode,
 }: ItemEditorProps) {
   const liveValidation = validateJan(item.jan);
   const status = statusFor(item);
   const confirmable = liveValidation.valid;
-  const canShowBarcode = item.confirmed && liveValidation.valid;
   const nameId = `item-name-${item.id}`;
   const janId = `item-jan-${item.id}`;
   const janHintId = `item-jan-hint-${item.id}`;
@@ -77,6 +74,14 @@ export function ItemEditor({
             ? `OCR行 ${item.sourceLine ?? '-'}`
             : '手入力'}
         </span>
+        <button
+          type="button"
+          className="button button-danger-quiet item-delete"
+          aria-label={`${item.name.trim() || '商品名未認識'}を削除`}
+          onClick={handleDelete}
+        >
+          削除
+        </button>
       </div>
 
       <div className="field">
@@ -144,36 +149,16 @@ export function ItemEditor({
           type="checkbox"
           checked={item.confirmed}
           disabled={!confirmable}
-          aria-describedby={confirmHintId}
+          aria-describedby={confirmable ? undefined : confirmHintId}
           onChange={onToggleConfirm}
         />
         <span>商品名とJANを確認しました</span>
       </label>
-      <p id={confirmHintId} className="confirm-hint">
-        {!confirmable
-          ? 'JANを修正すると確認できます。'
-          : item.confirmed
-            ? 'バーコードを表示できます。'
-            : '確認後にバーコードを表示できます。'}
-      </p>
-
-      <div className="item-actions">
-        <button
-          type="button"
-          className="button button-primary"
-          disabled={!canShowBarcode}
-          onClick={onShowBarcode}
-        >
-          バーコードを表示
-        </button>
-        <button
-          type="button"
-          className="button button-danger-quiet"
-          onClick={handleDelete}
-        >
-          削除
-        </button>
-      </div>
+      {!confirmable && (
+        <p id={confirmHintId} className="confirm-hint">
+          JANを修正すると確認できます。
+        </p>
+      )}
     </li>
   );
 }

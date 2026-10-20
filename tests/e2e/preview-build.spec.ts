@@ -52,7 +52,9 @@ test('本番ビルドがサブパスで配信され、手入力フローが動�
   await card
     .getByRole('checkbox', { name: '商品名とJANを確認しました' })
     .check();
-  await card.getByRole('button', { name: 'バーコードを表示' }).click();
+  await page
+    .getByRole('button', { name: '確認済みのバーコードを表示（1件）' })
+    .click();
 
   const barcodeScreen = page.getByRole('main', {
     name: 'JANバーコード表示',

@@ -90,6 +90,11 @@ test('画像アップロードから確認、バーコード切り替えまで�
   await expect(bananaCheckbox).toBeDisabled();
   await expect(
     banana.getByRole('button', { name: 'バーコードを表示' }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('button', {
+      name: '確認済みのバーコードを表示（0件）',
+    }),
   ).toBeDisabled();
 
   await milk
@@ -198,7 +203,9 @@ test('OCRでJAN候補なしのとき、手入力でバーコード表示まで�
   await card
     .getByRole('checkbox', { name: '商品名とJANを確認しました' })
     .check();
-  await card.getByRole('button', { name: 'バーコードを表示' }).click();
+  await page
+    .getByRole('button', { name: '確認済みのバーコードを表示（1件）' })
+    .click();
 
   const barcodeScreen = page.getByRole('main', {
     name: 'JANバーコード表示',
@@ -237,7 +244,9 @@ test('手入力でEAN-13とEAN-8を追加し、不正JANを拒否する', async 
     .getByRole('listitem', { name: /テスト商品 4901234567894/ });
   await expect(ean13Card).toBeVisible();
   await expect(
-    ean13Card.getByRole('button', { name: 'バーコードを表示' }),
+    page.getByRole('button', {
+      name: '確認済みのバーコードを表示（0件）',
+    }),
   ).toBeDisabled();
 
   await page
@@ -313,7 +322,9 @@ test('320px幅と横向きで主要操作が画面内に収まる', async ({ pag
   await card
     .getByRole('checkbox', { name: '商品名とJANを確認しました' })
     .check();
-  await card.getByRole('button', { name: 'バーコードを表示' }).click();
+  await page
+    .getByRole('button', { name: '確認済みのバーコードを表示（1件）' })
+    .click();
 
   const barcodeScreen = page.getByRole('main', {
     name: 'JANバーコード表示',

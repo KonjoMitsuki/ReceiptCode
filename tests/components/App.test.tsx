@@ -41,16 +41,18 @@ describe('App manual flow', () => {
     const checkbox = within(card).getByRole('checkbox', {
       name: '商品名とJANを確認しました',
     });
-    const barcodeButton = within(card).getByRole('button', {
-      name: 'バーコードを表示',
+    const bulkBarcodeButton = screen.getByRole('button', {
+      name: /確認済みのバーコードを表示/,
     });
 
-    expect(barcodeButton).toBeDisabled();
+    expect(bulkBarcodeButton).toHaveTextContent('（0件）');
+    expect(bulkBarcodeButton).toBeDisabled();
     await user.click(checkbox);
     expect(checkbox).toBeChecked();
-    expect(barcodeButton).toBeEnabled();
+    expect(bulkBarcodeButton).toHaveTextContent('（1件）');
+    expect(bulkBarcodeButton).toBeEnabled();
 
-    await user.click(barcodeButton);
+    await user.click(bulkBarcodeButton);
 
     expect(
       await screen.findByRole('img', {
@@ -79,8 +81,8 @@ describe('App manual flow', () => {
 
     expect(checkboxAfterReturn).not.toBeChecked();
     expect(
-      within(cardAfterReturn).getByRole('button', {
-        name: 'バーコードを表示',
+      screen.getByRole('button', {
+        name: '確認済みのバーコードを表示（0件）',
       }),
     ).toBeDisabled();
     expect(factory).not.toHaveBeenCalled();

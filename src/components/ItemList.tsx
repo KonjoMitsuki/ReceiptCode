@@ -83,33 +83,21 @@ export function ItemList({
       </div>
 
       {items.length > 0 && (
-        <>
-          <div className="summary-row" aria-label="確認状況">
-            <span className="summary-chip">{items.length}件</span>
-            <span className="summary-chip summary-valid">
-              有効 {validCount}
-            </span>
-            <span className="summary-chip summary-review">
-              要確認 {reviewCount}
-            </span>
-            <span className="summary-chip summary-invalid">
-              無効 {invalidCount}
-            </span>
-            <span className="summary-chip summary-confirmed">
-              確認済み {confirmedCount}
-            </span>
-          </div>
-
-          {scannable.length > 0 && (
-            <button
-              type="button"
-              className="button button-primary compact-primary"
-              onClick={() => onShowBarcode(scannable[0].id)}
-            >
-              確認済みのバーコードを表示（{scannable.length}件）
-            </button>
-          )}
-        </>
+        <div className="summary-row" aria-label="確認状況">
+          <span className="summary-chip">{items.length}件</span>
+          <span className="summary-chip summary-valid">
+            有効 {validCount}
+          </span>
+          <span className="summary-chip summary-review">
+            要確認 {reviewCount}
+          </span>
+          <span className="summary-chip summary-invalid">
+            無効 {invalidCount}
+          </span>
+          <span className="summary-chip summary-confirmed">
+            確認済み {confirmedCount}
+          </span>
+        </div>
       )}
 
       {items.length === 0 ? (
@@ -157,10 +145,27 @@ export function ItemList({
               onUpdate={(patch) => onUpdateItem(item.id, patch)}
               onDelete={() => onDeleteItem(item.id)}
               onToggleConfirm={() => onToggleConfirm(item.id)}
-              onShowBarcode={() => onShowBarcode(item.id)}
             />
           ))}
         </ul>
+      )}
+
+      {items.length > 0 && (
+        <div className="bulk-actions">
+          <button
+            type="button"
+            className="button button-primary compact-primary"
+            disabled={scannable.length === 0}
+            onClick={() => onShowBarcode(scannable[0].id)}
+          >
+            確認済みのバーコードを表示（{scannable.length}件）
+          </button>
+          {scannable.length === 0 && (
+            <p className="hint">
+              各商品の「商品名とJANを確認しました」にチェックを入れると、まとめて表示できます。
+            </p>
+          )}
+        </div>
       )}
 
       {manualAddOpen ? (

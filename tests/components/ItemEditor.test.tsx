@@ -24,7 +24,6 @@ function renderEditor(overrides: Partial<ReceiptItem> = {}, duplicateCount = 1) 
   const onUpdate = vi.fn();
   const onDelete = vi.fn();
   const onToggleConfirm = vi.fn();
-  const onShowBarcode = vi.fn();
 
   render(
     <ul>
@@ -34,16 +33,15 @@ function renderEditor(overrides: Partial<ReceiptItem> = {}, duplicateCount = 1) 
         onUpdate={onUpdate}
         onDelete={onDelete}
         onToggleConfirm={onToggleConfirm}
-        onShowBarcode={onShowBarcode}
       />
     </ul>,
   );
 
-  return { onUpdate, onDelete, onToggleConfirm, onShowBarcode };
+  return { onUpdate, onDelete, onToggleConfirm };
 }
 
 describe('ItemEditor', () => {
-  it('有効でも未確認ならバーコード表示を無効にする', () => {
+  it('カード内に個別のバーコード表示ボタンを置かない', () => {
     renderEditor();
 
     expect(screen.getByText('有効')).toBeInTheDocument();
@@ -53,8 +51,11 @@ describe('ItemEditor', () => {
       }),
     ).toBeEnabled();
     expect(
-      screen.getByRole('button', { name: 'バーコードを表示' }),
-    ).toBeDisabled();
+      screen.queryByRole('button', { name: 'バーコードを表示' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: '牛乳 1Lを削除' }),
+    ).toBeInTheDocument();
     expect(screen.getByText('OCR行 5')).toBeInTheDocument();
   });
 
@@ -70,23 +71,18 @@ describe('ItemEditor', () => {
     expect(onToggleConfirm).toHaveBeenCalledTimes(1);
   });
 
-  it('確認済みならバーコード表示を有効にする', () => {
+  it('確認済みの状態を表示する', () => {
     renderEditor({ confirmed: true });
-    expect(
-      screen.getByRole('button', { name: 'バーコードを表示' }),
-    ).toBeEnabled();
+    expect(screen.getByText('確認済み')).toBeInTheDocument();
   });
 
-  it('不正JANは確認・バーコード表示を無効にし理由を表示する', () => {
+  it('不正JANは確認を無効にし理由を表示する', () => {
     renderEditor({ jan: '4901234567890', format: 'EAN13' });
 
     expect(
       screen.getByRole('checkbox', {
         name: '商品名とJANを確認しました',
       }),
-    ).toBeDisabled();
-    expect(
-      screen.getByRole('button', { name: 'バーコードを表示' }),
     ).toBeDisabled();
     expect(
       screen.getByText(/チェックデジットが一致しません/),
@@ -97,11 +93,13 @@ describe('ItemEditor', () => {
     );
   });
 
-  it('要確認でもチェックデジットが有効なら確認後に表示できる', () => {
+  it('要確認でもチェックデジットが有効なら確認できる', () => {
     renderEditor({ validation: 'needs-review', confirmed: true });
     expect(screen.getByText('要確認')).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'バーコードを表示' }),
+      screen.getByRole('checkbox', {
+        name: '商品名とJANを確認しました',
+      }),
     ).toBeEnabled();
   });
 
@@ -129,7 +127,9 @@ describe('ItemEditor', () => {
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
     const { onDelete } = renderEditor();
 
-    await user.click(screen.getByRole('button', { name: '削除' }));
+    await user.click(
+      screen.getByRole('button', { name: '牛乳 1Lを削除' }),
+    );
     expect(confirm).toHaveBeenCalled();
     expect(onDelete).toHaveBeenCalledTimes(1);
   });
