@@ -1,9 +1,9 @@
 # Receipt2JAN
 
-店舗スタッフがレシートを撮影し、印字された **JAN（EAN-13 / EAN-8）** を端末内OCRで読み取り、レジのハンディスキャナーで使える **SVGバーコード** を表示する静的Webアプリです。
+レシートを撮影し、印字された **JAN（EAN-13 / EAN-8）** を端末内OCRで読み取り、レジのハンディスキャナーで使える **SVGバーコード** を表示する静的Webアプリです。
 
 - プロジェクト名: **Receipt2JAN**
-- 対象端末: iPhone Safari / Android Chrome（店舗業務での私物端末利用は店舗管理者の許可を得てください）
+- 対象端末: iPhone Safari / Android Chrome
 - 配信: GitHub Pages（公開URL: <https://konjomitsuki.github.io/ReceiptCode/>、サブパス配信に対応）
 - **サーバー処理・ログイン・DB・外部OCR APIはありません。**レシート画像とOCR結果は端末のブラウザ内だけで処理します。
 

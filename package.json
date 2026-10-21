@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "店内端末だけでレシートをOCRし、JAN/EANバーコードを表示する静的Webアプリ",
+  "description": "端末内だけでレシートをOCRし、JAN/EANバーコードを表示する静的Webアプリ",
   "engines": {
     "node": ">=22.12.0"
   },

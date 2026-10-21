@@ -34,7 +34,7 @@ export function ReceiptUploader({
         />
         <div className="relative">
           <p className="text-label-large font-semibold tracking-wide text-on-primary-container/80">
-            店舗スタッフ向け・端末内処理
+            端末内処理
           </p>
           <h1 className="mt-3 max-w-xl text-headline-large-emphasized sm:text-display-small-emphasized md:text-display-medium-emphasized">
             レシートから
