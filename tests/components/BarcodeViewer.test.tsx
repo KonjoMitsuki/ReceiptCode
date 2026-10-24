@@ -44,7 +44,7 @@ describe('BarcodeViewer', () => {
   it('有効なJANのSVGバーコードと数字を表示する', async () => {
     renderViewer();
 
-    expect(screen.getByText('4901234567894')).toBeInTheDocument();
+    expect(screen.getByLabelText('JAN 4901234567894')).toBeInTheDocument();
     expect(
       await screen.findByRole('img', {
         name: /EAN13 バーコード 4901234567894/,
@@ -52,6 +52,7 @@ describe('BarcodeViewer', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('牛乳 1L')).toBeInTheDocument();
     expect(screen.getByText('1 / 2')).toBeInTheDocument();
+    await userEvent.click(screen.getByLabelText('その他の操作'));
     expect(screen.getByRole('button', { name: '前へ' })).toBeDisabled();
     expect(screen.getByRole('button', { name: '次へ' })).toBeEnabled();
   });
@@ -60,10 +61,11 @@ describe('BarcodeViewer', () => {
     const user = userEvent.setup();
     const { onNext, onClose } = renderViewer();
 
+    await user.click(screen.getByLabelText('その他の操作'));
     await user.click(screen.getByRole('button', { name: '次へ' }));
     expect(onNext).toHaveBeenCalledTimes(1);
 
-    await user.click(screen.getByRole('button', { name: '一覧に戻る' }));
+    await user.click(screen.getByRole('button', { name: '別の商品を見る' }));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
@@ -74,7 +76,7 @@ describe('BarcodeViewer', () => {
     expect(
       screen.getByText('画面の明るさを上げてください。'),
     ).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: '集中表示' }));
+    await user.click(screen.getByRole('button', { name: '全画面で表示' }));
 
     expect(
       screen.queryByText('画面の明るさを上げてください。'),
@@ -82,7 +84,7 @@ describe('BarcodeViewer', () => {
     expect(
       screen.getByRole('button', { name: '集中表示を終了' }),
     ).toBeInTheDocument();
-    expect(screen.getByText('4901234567894')).toBeInTheDocument();
+    expect(screen.getByLabelText('JAN 4901234567894')).toBeInTheDocument();
   });
 
   it('不正JANはバーコードを描画せず理由を表示する', async () => {
@@ -96,8 +98,9 @@ describe('BarcodeViewer', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('Wake Lock非対応でも案内を表示して操作を継続できる', () => {
+  it('Wake Lock非対応でもメニューから状態を確認できる', async () => {
     renderViewer();
+    await userEvent.click(screen.getByLabelText('その他の操作'));
     expect(
       screen.getByRole('status'),
     ).toHaveTextContent('自動ロック防止に対応していません');

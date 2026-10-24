@@ -14,7 +14,7 @@ export function ErrorPanel({
   onManualStart,
 }: ErrorPanelProps) {
   return (
-    <main className="screen error-screen">
+    <main tabIndex={-1} className="screen error-screen">
       <div className="error-card" role="alert">
         <span className="error-mark" aria-hidden="true">
           !

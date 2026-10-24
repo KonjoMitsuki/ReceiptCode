@@ -46,27 +46,25 @@ export function ManualAddForm({ onAdd, onCancel }: ManualAddFormProps) {
       onSubmit={handleSubmit}
       noValidate
     >
-      <h2 id={`${formId}-title`} className="section-title">
-        JANを手入力で追加
-      </h2>
-      <p className="hint">
-        商品名は任意です。JANは先頭の0を省略せず、全桁を入力してください。
-      </p>
+      <header className="manual-heading">
+        <h1 id={`${formId}-title`}>商品を追加</h1>
+        <p>JANコードを入力して追加します</p>
+      </header>
 
       <div className="field">
-        <label htmlFor={nameId}>商品名（任意）</label>
+        <label htmlFor={nameId}>商品名</label>
         <input
           id={nameId}
           type="text"
           value={name}
           autoComplete="off"
-          placeholder="例: 牛乳 1L"
+          placeholder="例：緑茶 500ml"
           onChange={(event) => setName(event.target.value)}
         />
       </div>
 
       <div className="field">
-        <label htmlFor={janId}>JAN（8桁 / 13桁）</label>
+        <label htmlFor={janId}>JANコード（8桁・13桁）</label>
         <input
           id={janId}
           className="jan-input"
@@ -78,7 +76,7 @@ export function ManualAddForm({ onAdd, onCancel }: ManualAddFormProps) {
           spellCheck={false}
           maxLength={13}
           pattern="[0-9]*"
-          placeholder="例: 4901234567894"
+          placeholder="4901234567894"
           aria-describedby={error ? `${hintId} ${errorId}` : hintId}
           aria-invalid={Boolean(error)}
           onChange={(event) => {
@@ -86,10 +84,14 @@ export function ManualAddForm({ onAdd, onCancel }: ManualAddFormProps) {
             if (error) setError(null);
           }}
         />
-        <span id={hintId} className="field-hint">
-          半角数字のみ・チェックデジットも含めて入力
-        </span>
+
       </div>
+
+      <aside className="validation-hint" id={hintId}>
+        <strong>ⓘ チェックデジットを検証</strong>
+        <p>登録前に番号の形式を確認します</p>
+        <span className="visually-hidden">商品名は任意です。JANは半角数字で、先頭の0を省略せず入力してください。</span>
+      </aside>
 
       {error && (
         <p id={errorId} className="form-error" role="alert">
@@ -99,14 +101,14 @@ export function ManualAddForm({ onAdd, onCancel }: ManualAddFormProps) {
 
       <div className="form-actions">
         <button type="submit" className="button button-primary">
-          一覧に追加
+          商品を追加する
         </button>
         <button
           type="button"
           className="button button-secondary"
           onClick={onCancel}
         >
-          閉じる
+          キャンセル
         </button>
       </div>
     </form>
