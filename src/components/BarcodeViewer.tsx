@@ -45,6 +45,9 @@ export function BarcodeViewer({
       if (!svg) return;
       try {
         renderBarcodeSvg(svg, item.jan);
+        // The design slot has independent bar width/height. Keep the generated
+        // module pattern and quiet zones; only scale its presentation.
+        svg.setAttribute('preserveAspectRatio', 'none');
         setRenderError(null);
       } catch (error) {
         setRenderError(
@@ -97,7 +100,16 @@ export function BarcodeViewer({
 
   return (
     <div className={`app barcode-app${focusMode ? ' is-focus' : ''}`} ref={screenRef}>
-      {!focusMode && <AppHeader />}
+      {!focusMode && <AppHeader>
+        <nav className="barcode-nav" aria-label="商品の切り替え">
+          <button type="button" disabled={!hasPrevious} onClick={onPrevious}>前へ</button>
+          <span className="barcode-counter" aria-live="polite">{index + 1} / {total}</span>
+          <button type="button" disabled={!hasNext} onClick={onNext}>次へ</button>
+        </nav>
+        <p>{format && formatLabel(format)}</p>
+        <p>画面の明るさを上げてください。</p>
+        {wakeLockMessage && <p role="status">{wakeLockMessage}</p>}
+      </AppHeader>}
     <main ref={mainRef} tabIndex={-1}
       className={`screen barcode-screen${focusMode ? ' is-focus' : ''}`}
       aria-label="JANバーコード表示"
@@ -118,7 +130,9 @@ export function BarcodeViewer({
             className={`barcode-svg${renderError ? ' is-hidden' : ''}`}
             aria-label={`${format ?? 'JAN'} バーコード ${item.jan}`} />
           {renderError && <p className="barcode-error" role="alert">{renderError}</p>}
-          <p className="barcode-number" aria-label={`JAN ${item.jan}`}>{item.jan}</p>
+          <p className="barcode-number" aria-label={`JAN ${item.jan}`}>
+            {item.jan.length === 13 ? `${item.jan.slice(0, 1)} ${item.jan.slice(1, 7)} ${item.jan.slice(7)}` : `${item.jan.slice(0, 4)} ${item.jan.slice(4)}`}
+          </p>
           {!focusMode && <p className="barcode-caption">レジでこの画面を提示してください</p>}
         </section>
         {focusMode && <p className="focus-hint">読み取れない場合は、上の番号をレジに手入力してください。</p>}
@@ -129,25 +143,11 @@ export function BarcodeViewer({
         </button>
         {!focusMode && <button type="button" className="button button-secondary" onClick={() => void close()}>別の商品を見る</button>}
       </div>
-      <nav className="barcode-nav" aria-label="商品の切り替え">
+      {focusMode && <nav className="barcode-nav" aria-label="商品の切り替え">
         <button type="button" className="button button-secondary" disabled={!hasPrevious} onClick={onPrevious}>前へ</button>
-        <span className="barcode-counter" aria-live="polite">{index + 1} / {total}</span>
+        <span aria-live="polite">{index + 1} / {total}</span>
         <button type="button" className="button button-secondary" disabled={!hasNext} onClick={onNext}>次へ</button>
-      </nav>
-      <button type="button" className="button button-quiet" onClick={() => void close()}>一覧に戻る</button>
-      {!focusMode && <>
-        <details className="scan-guidance">
-          <summary>読み取りのヒント</summary>
-          <p>レジのハンディスキャナーをバーコードに向けてください。</p>
-          <ul>
-            <li>画面の明るさを上げてください。</li>
-            <li>横向きにすると大きく表示できます。</li>
-            <li>読み取れない場合は、表示中のJAN番号をレジに手入力してください。</li>
-          </ul>
-          {format && <p>{formatLabel(format)}</p>}
-        </details>
-        {wakeLockMessage && <p className="wake-lock-note" role="status">{wakeLockMessage}</p>}
-      </>}
+      </nav>}
     </main>
     </div>
   );

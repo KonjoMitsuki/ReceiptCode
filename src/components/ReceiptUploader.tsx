@@ -1,9 +1,8 @@
 interface ReceiptUploaderProps {
   onFileSelected: (file: File) => void;
-  onManualStart: () => void;
 }
 
-export function ReceiptUploader({ onFileSelected, onManualStart }: ReceiptUploaderProps) {
+export function ReceiptUploader({ onFileSelected }: ReceiptUploaderProps) {
   return (
     <main className="screen upload-screen" tabIndex={-1}>
       <section className="hero">
@@ -32,9 +31,6 @@ export function ReceiptUploader({ onFileSelected, onManualStart }: ReceiptUpload
         </label>
       </section>
       <p className="upload-hint">ヒント：JANがはっきり写るように撮影</p>
-      <button type="button" className="button button-quiet manual-start-button" onClick={onManualStart}>
-        JANを手入力して始める
-      </button>
     </main>
   );
 }

@@ -34,15 +34,16 @@ test('本番ビルドがサブパスで配信され、手入力フローが動�
     .poll(() =>
       page.evaluate(() => getComputedStyle(document.body).backgroundColor),
     )
-    .toBe('rgb(247, 247, 255)');
+    .toBe('rgb(229, 229, 229)');
 
+  await page.getByLabel('その他の操作').click();
   await page
     .getByRole('button', { name: 'JANを手入力して始める' })
     .click();
   const manualForm = page.getByRole('form', {
     name: '商品を追加',
   });
-  await manualForm.getByLabel('商品名（任意）').fill('本番確認商品');
+  await manualForm.getByLabel('商品名').fill('本番確認商品');
   await manualForm.getByLabel('JANコード（8桁・13桁）').fill('4901234567894');
   await manualForm.getByRole('button', { name: '商品を追加する' }).click();
 
@@ -53,14 +54,11 @@ test('本番ビルドがサブパスで配信され、手入力フローが動�
   await card
     .getByRole('checkbox', { name: '商品名とJANを確認しました' })
     .check();
-  await page
-    .getByRole('button', { name: '確認済みのバーコードを表示（1件）' })
-    .click();
+  await card.getByRole('button', { name: /のバーコードを表示/ }).click();
 
   const barcodeScreen = page.getByRole('main', {
     name: 'JANバーコード表示',
   });
-  await expect(barcodeScreen).toContainText('1 / 1');
   await expect
     .poll(() => barcodeScreen.locator('svg.barcode-svg rect').count())
     .toBeGreaterThan(10);

@@ -16,11 +16,12 @@ describe('App manual flow', () => {
     const factory = createUnusedFactory();
     render(<App createOcrEngine={factory} />);
 
+    await user.click(screen.getByLabelText('その他の操作'));
     await user.click(
       screen.getByRole('button', { name: 'JANを手入力して始める' }),
     );
 
-    const nameInput = screen.getByLabelText('商品名（任意）');
+    const nameInput = screen.getByLabelText('商品名');
     const janInput = screen.getByLabelText('JANコード（8桁・13桁）');
 
     await user.type(nameInput, 'テスト商品');
@@ -42,6 +43,7 @@ describe('App manual flow', () => {
     const checkbox = within(card).getByRole('checkbox', {
       name: '商品名とJANを確認しました',
     });
+    await user.click(screen.getByLabelText('その他の操作'));
     const bulkBarcodeButton = screen.getByRole('button', {
       name: /確認済みのバーコードを表示/,
     });
@@ -63,7 +65,7 @@ describe('App manual flow', () => {
     expect(screen.getByText('テスト商品')).toBeInTheDocument();
     expect(screen.getByText('1 / 1')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: '一覧に戻る' }));
+    await user.click(screen.getByRole('button', { name: '別の商品を見る' }));
 
     const cardAfterReturn = screen.getByRole('listitem', {
       name: /テスト商品 4901234567894/,
@@ -80,6 +82,7 @@ describe('App manual flow', () => {
     });
     await user.clear(janAfterReturn);
     await user.type(janAfterReturn, '4512345678906');
+    await user.click(screen.getByLabelText('その他の操作'));
 
     expect(checkboxAfterReturn).not.toBeChecked();
     expect(
@@ -94,6 +97,7 @@ describe('App manual flow', () => {
     const user = userEvent.setup();
     render(<App createOcrEngine={createUnusedFactory()} />);
 
+    await user.click(screen.getByLabelText('その他の操作'));
     await user.click(
       screen.getByRole('button', { name: 'JANを手入力して始める' }),
     );
@@ -107,8 +111,9 @@ describe('App manual flow', () => {
   it('追加画面のキャンセル・戻るで既存商品と確認状態を保持する', async () => {
     const user = userEvent.setup();
     render(<App createOcrEngine={createUnusedFactory()} />);
+    await user.click(screen.getByLabelText('その他の操作'));
     await user.click(screen.getByRole('button', { name: 'JANを手入力して始める' }));
-    await user.type(screen.getByLabelText('商品名（任意）'), '保存される商品');
+    await user.type(screen.getByLabelText('商品名'), '保存される商品');
     await user.type(screen.getByLabelText('JANコード（8桁・13桁）'), '0123456789012');
     await user.click(screen.getByRole('button', { name: '商品を追加する' }));
     await user.click(screen.getByRole('button', { name: '保存される商品の内容を確認・編集' }));
@@ -117,7 +122,7 @@ describe('App manual flow', () => {
     for (const exit of ['キャンセル', '‹ 商品一覧']) {
       await user.click(screen.getByRole('button', { name: '＋ 商品を手動追加' }));
       expect(screen.queryByRole('listitem')).not.toBeInTheDocument();
-      await user.type(screen.getByLabelText('商品名（任意）'), '未登録の商品');
+      await user.type(screen.getByLabelText('商品名'), '未登録の商品');
       await user.click(screen.getByRole('button', { name: exit }));
       expect(screen.getAllByRole('listitem')).toHaveLength(1);
       expect(screen.getByRole('button', { name: '保存される商品のバーコードを表示' })).toBeInTheDocument();
@@ -128,10 +133,11 @@ describe('App manual flow', () => {
   it('未確認カードは編集を開き、確認済みカードは選択した商品のバーコードを開く', async () => {
     const user = userEvent.setup();
     render(<App createOcrEngine={createUnusedFactory()} />);
+    await user.click(screen.getByLabelText('その他の操作'));
     await user.click(screen.getByRole('button', { name: 'JANを手入力して始める' }));
     for (const [index, name, jan] of [[0, '商品A', '4901234567894'], [1, '商品B', '12345670']] as const) {
       if (index) await user.click(screen.getByRole('button', { name: '＋ 商品を手動追加' }));
-      await user.type(screen.getByLabelText('商品名（任意）'), name);
+      await user.type(screen.getByLabelText('商品名'), name);
       await user.type(screen.getByLabelText('JANコード（8桁・13桁）'), jan);
       await user.click(screen.getByRole('button', { name: '商品を追加する' }));
       const card = screen.getByRole('listitem', { name: `${name} ${jan}` });

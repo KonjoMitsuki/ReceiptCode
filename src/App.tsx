@@ -94,12 +94,21 @@ function App({ createOcrEngine }: AppProps) {
 
   return (
     <div className={`app${isManual ? ' manual-app' : ''}`} ref={mainRef}>
-      <AppHeader onBack={isManual ? () => flow.setManualAddOpen(false) : undefined} />
+      <AppHeader onBack={isManual ? () => flow.setManualAddOpen(false) : undefined}>
+        {flow.screen === 'upload' && <button type="button" onClick={flow.startManual}>JANを手入力して始める</button>}
+        {flow.screen === 'review' && !isManual && <>
+          <button type="button" disabled={!flow.scannableItems.length}
+            onClick={() => flow.openBarcode(flow.scannableItems[0].id)}>
+            確認済みのバーコードを表示（{flow.scannableItems.length}件）
+          </button>
+          {flow.prepared && <button type="button" onClick={() => void flow.startOcr()}>同じ画像でもう一度読み取る</button>}
+          <button type="button" onClick={chooseAnother}>別の画像を選ぶ</button>
+        </>}
+      </AppHeader>
 
       {flow.screen === 'upload' && (
         <ReceiptUploader
           onFileSelected={(file) => void flow.selectImage(file)}
-          onManualStart={flow.startManual}
         />
       )}
 
@@ -144,14 +153,11 @@ function App({ createOcrEngine }: AppProps) {
       {flow.screen === 'review' && !isManual && (
         <ItemList
           items={flow.session?.items ?? []}
-          hasPreparedImage={Boolean(flow.prepared)}
           onUpdateItem={flow.updateItem}
           onDeleteItem={flow.deleteItem}
           onToggleConfirm={flow.toggleConfirm}
           onShowBarcode={flow.openBarcode}
           onManualAddOpenChange={flow.setManualAddOpen}
-          onChooseAnother={chooseAnother}
-          onRetryOcr={() => void flow.startOcr()}
         />
       )}
 
@@ -164,22 +170,13 @@ function App({ createOcrEngine }: AppProps) {
         />
       )}
 
-      {(flow.screen === 'upload' || (flow.screen === 'review' && !isManual)) && (
+      {flow.screen === 'upload' && (
         <nav className="bottom-nav" aria-label="メインナビゲーション">
-          <button type="button" aria-current={flow.screen === 'upload' ? 'page' : undefined} onClick={flow.screen === 'upload' ? undefined : chooseAnother}>
-            <span aria-hidden="true">▣</span> 読み取る
-          </button>
-          <button type="button" aria-current={flow.screen === 'review' ? 'page' : undefined} disabled={!flow.session} onClick={() => flow.setManualAddOpen(false)}>
-            <span aria-hidden="true">▤</span> 商品一覧
-          </button>
+          <button type="button" aria-current="page"><span aria-hidden="true">▣</span> 読み取る</button>
+          <button type="button" onClick={flow.startManual}><span aria-hidden="true">▤</span> 商品一覧</button>
         </nav>
       )}
-
-      {flow.screen !== 'preparing' && flow.screen !== 'upload' && !isManual && (
-        <footer className="app-footer">
-          写真・OCR結果は外部送信されません
-        </footer>
-      )}
+      {flow.screen === 'review' && !isManual && <div className="results-bottom-bar" aria-hidden="true" />}
     </div>
   );
 }

@@ -52,7 +52,7 @@ export function ManualAddForm({ onAdd, onCancel }: ManualAddFormProps) {
       </header>
 
       <div className="field">
-        <label htmlFor={nameId}>商品名（任意）</label>
+        <label htmlFor={nameId}>商品名</label>
         <input
           id={nameId}
           type="text"
@@ -76,7 +76,7 @@ export function ManualAddForm({ onAdd, onCancel }: ManualAddFormProps) {
           spellCheck={false}
           maxLength={13}
           pattern="[0-9]*"
-          placeholder="例: 4901234567894"
+          placeholder="4901234567894"
           aria-describedby={error ? `${hintId} ${errorId}` : hintId}
           aria-invalid={Boolean(error)}
           onChange={(event) => {

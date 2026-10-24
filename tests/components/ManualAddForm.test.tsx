@@ -10,7 +10,7 @@ describe('ManualAddForm', () => {
 
     render(<ManualAddForm onAdd={onAdd} onCancel={vi.fn()} />);
 
-    await user.type(screen.getByLabelText('商品名（任意）'), '牛乳 1L');
+    await user.type(screen.getByLabelText('商品名'), '牛乳 1L');
     await user.type(
       screen.getByLabelText('JANコード（8桁・13桁）'),
       '4901234567894',

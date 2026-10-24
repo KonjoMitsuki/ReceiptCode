@@ -64,12 +64,18 @@ export function ItemEditor({
       aria-label={`${item.name || '商品名未認識'} ${item.jan}`}
     >
       <div className="item-summary-row">
+        <button type="button" className="item-icon"
+          title="内容を確認・編集"
+          aria-label={`${item.name || '商品名未認識'}の内容を確認・編集`}
+          aria-expanded={expanded} aria-controls={`editor-${item.id}`}
+          onClick={() => setExpanded(!expanded)}>▤</button>
         <button type="button" className="item-summary"
-          aria-label={`${item.name || '商品名未認識'}${item.confirmed && confirmable && onShowBarcode ? 'のバーコードを表示' : 'の内容を確認・編集'}`}
+          aria-label={`${item.name || '商品名未認識'}${item.confirmed && confirmable && onShowBarcode ? 'のバーコードを表示' : 'の商品詳細'}`}
+          title={item.confirmed && confirmable ? 'バーコードを表示' : '内容を確認・編集'}
           aria-expanded={item.confirmed && confirmable && onShowBarcode ? undefined : expanded}
           aria-controls={item.confirmed && confirmable && onShowBarcode ? undefined : `editor-${item.id}`}
           onClick={() => item.confirmed && confirmable && onShowBarcode ? onShowBarcode() : setExpanded(!expanded)}>
-          <span className="item-icon" aria-hidden="true">▤</span>
+
           <span className="item-summary-text">
             <strong>{item.name.trim() || '商品名未認識'}</strong>
             <span className="item-jan">{item.jan}</span>
@@ -79,12 +85,6 @@ export function ItemEditor({
           </span>
           <span className="item-chevron" aria-hidden="true">›</span>
         </button>
-        {item.confirmed && confirmable && onShowBarcode && (
-          <button type="button" className="button button-quiet item-edit-button"
-            aria-label={`${item.name || '商品名未認識'}の内容を確認・編集`}
-            aria-expanded={expanded} aria-controls={`editor-${item.id}`}
-            onClick={() => setExpanded(!expanded)}>編集</button>
-        )}
       </div>
       <div className="item-editor" id={`editor-${item.id}`} hidden={!expanded}>
         <div className="item-card-top">
