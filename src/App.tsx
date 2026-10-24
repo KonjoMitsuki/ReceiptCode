@@ -1,4 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { AppHeader } from './components/AppHeader';
+import { ManualAddForm } from './components/ManualAddForm';
 import { BarcodeViewer } from './components/BarcodeViewer';
 import { ErrorPanel } from './components/ErrorPanel';
 import { ImagePreview } from './components/ImagePreview';
@@ -12,35 +14,23 @@ interface AppProps {
   createOcrEngine?: OcrEngineFactory;
 }
 
-function BrandHeader() {
-  return (
-    <header className="app-header">
-      <span className="brand-mark" aria-hidden="true">
-        <span />
-        <span />
-        <span />
-        <span />
-      </span>
-      <span className="brand-name">Receipt2JAN</span>
-      <span className="brand-tag">端末内OCR</span>
-    </header>
-  );
-}
-
 function App({ createOcrEngine }: AppProps) {
   const flow = useReceiptFlow(createOcrEngine);
+  const mainRef = useRef<HTMLDivElement>(null);
+  const isManual = flow.screen === 'review' && flow.manualAddOpen;
   const hasItems = Boolean(flow.session?.items.length);
 
   useEffect(() => {
-    document.title =
+    document.title = isManual ? '商品を追加 | ReceiptCode' :
       flow.screen === 'barcode'
-        ? 'バーコード表示 | Receipt2JAN'
+        ? 'バーコード表示 | ReceiptCode'
         : flow.screen === 'processing'
-          ? '読み取り中 | Receipt2JAN'
-          : 'Receipt2JAN';
+          ? '読み取り中 | ReceiptCode'
+          : 'ReceiptCode';
+    mainRef.current?.querySelector<HTMLElement>('main')?.focus();
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
-  }, [flow.screen]);
+  }, [flow.screen, isManual]);
 
   useEffect(() => {
     if (!hasItems) return;
@@ -70,7 +60,7 @@ function App({ createOcrEngine }: AppProps) {
     if (!flow.barcodeItem) {
       return (
         <div className="app">
-          <BrandHeader />
+          <AppHeader />
           <main className="screen">
             <section className="empty-card">
               <h1>表示できるバーコードがありません</h1>
@@ -103,8 +93,8 @@ function App({ createOcrEngine }: AppProps) {
   }
 
   return (
-    <div className="app">
-      <BrandHeader />
+    <div className={`app${isManual ? ' manual-app' : ''}`} ref={mainRef}>
+      <AppHeader onBack={isManual ? () => flow.setManualAddOpen(false) : undefined} />
 
       {flow.screen === 'upload' && (
         <ReceiptUploader
@@ -114,7 +104,7 @@ function App({ createOcrEngine }: AppProps) {
       )}
 
       {flow.screen === 'preparing' && (
-        <main className="screen center-screen">
+        <main className="screen center-screen" tabIndex={-1}>
           <div className="spinner" aria-hidden="true" />
           <h1>画像を準備しています</h1>
           <p className="lead">画像の向きとサイズを端末内で整えています。</p>
@@ -145,16 +135,20 @@ function App({ createOcrEngine }: AppProps) {
         />
       )}
 
-      {flow.screen === 'review' && (
+      {isManual && (
+        <main className="screen manual-screen" tabIndex={-1}>
+          <ManualAddForm onAdd={flow.addItem} onCancel={() => flow.setManualAddOpen(false)} />
+        </main>
+      )}
+
+      {flow.screen === 'review' && !isManual && (
         <ItemList
           items={flow.session?.items ?? []}
-          manualAddOpen={flow.manualAddOpen}
           hasPreparedImage={Boolean(flow.prepared)}
           onUpdateItem={flow.updateItem}
           onDeleteItem={flow.deleteItem}
           onToggleConfirm={flow.toggleConfirm}
           onShowBarcode={flow.openBarcode}
-          onAddItem={flow.addItem}
           onManualAddOpenChange={flow.setManualAddOpen}
           onChooseAnother={chooseAnother}
           onRetryOcr={() => void flow.startOcr()}
@@ -170,7 +164,18 @@ function App({ createOcrEngine }: AppProps) {
         />
       )}
 
-      {flow.screen !== 'preparing' && (
+      {(flow.screen === 'upload' || (flow.screen === 'review' && !isManual)) && (
+        <nav className="bottom-nav" aria-label="メインナビゲーション">
+          <button type="button" aria-current={flow.screen === 'upload' ? 'page' : undefined} onClick={flow.screen === 'upload' ? undefined : chooseAnother}>
+            <span aria-hidden="true">▣</span> 読み取る
+          </button>
+          <button type="button" aria-current={flow.screen === 'review' ? 'page' : undefined} disabled={!flow.session} onClick={() => flow.setManualAddOpen(false)}>
+            <span aria-hidden="true">▤</span> 商品一覧
+          </button>
+        </nav>
+      )}
+
+      {flow.screen !== 'preparing' && flow.screen !== 'upload' && !isManual && (
         <footer className="app-footer">
           写真・OCR結果は外部送信されません
         </footer>

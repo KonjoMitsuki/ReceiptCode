@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { validateJan } from '../lib/jan';
 import type { ReceiptItem, ValidationState } from '../types/receipt';
 
@@ -7,6 +8,7 @@ interface ItemEditorProps {
   onUpdate: (patch: Partial<Pick<ReceiptItem, 'name' | 'jan'>>) => void;
   onDelete: () => void;
   onToggleConfirm: () => void;
+  onShowBarcode?: () => void;
 }
 
 function statusFor(item: ReceiptItem): ValidationState {
@@ -40,7 +42,9 @@ export function ItemEditor({
   onUpdate,
   onDelete,
   onToggleConfirm,
+  onShowBarcode,
 }: ItemEditorProps) {
+  const [expanded, setExpanded] = useState(false);
   const liveValidation = validateJan(item.jan);
   const status = statusFor(item);
   const confirmable = liveValidation.valid;
@@ -59,106 +63,128 @@ export function ItemEditor({
       className={`item-card status-${status}`}
       aria-label={`${item.name || '商品名未認識'} ${item.jan}`}
     >
-      <div className="item-card-top">
-        <div className="badge-row">
-          <span className={`badge badge-${status}`}>{statusText[status]}</span>
-          {!item.name.trim() && (
-            <span className="badge badge-neutral">商品名未認識</span>
-          )}
-          {item.confirmed && (
-            <span className="badge badge-confirmed">確認済み</span>
-          )}
-        </div>
-        <span className="meta-text">
-          {item.source === 'ocr'
-            ? `OCR行 ${item.sourceLine ?? '-'}`
-            : '手入力'}
-        </span>
-        <button
-          type="button"
-          className="button button-danger-quiet item-delete"
-          aria-label={`${item.name.trim() || '商品名未認識'}を削除`}
-          onClick={handleDelete}
-        >
-          削除
+      <div className="item-summary-row">
+        <button type="button" className="item-summary"
+          aria-label={`${item.name || '商品名未認識'}${item.confirmed && confirmable && onShowBarcode ? 'のバーコードを表示' : 'の内容を確認・編集'}`}
+          aria-expanded={item.confirmed && confirmable && onShowBarcode ? undefined : expanded}
+          aria-controls={item.confirmed && confirmable && onShowBarcode ? undefined : `editor-${item.id}`}
+          onClick={() => item.confirmed && confirmable && onShowBarcode ? onShowBarcode() : setExpanded(!expanded)}>
+          <span className="item-icon" aria-hidden="true">▤</span>
+          <span className="item-summary-text">
+            <strong>{item.name.trim() || '商品名未認識'}</strong>
+            <span className="item-jan">{item.jan}</span>
+            <span className={`item-status ${item.confirmed && confirmable ? 'is-confirmed' : status === 'invalid' ? 'is-invalid' : 'is-review'}`}>
+              {item.confirmed && confirmable ? '確認済み' : status === 'invalid' ? '無効' : '要確認'}
+            </span>
+          </span>
+          <span className="item-chevron" aria-hidden="true">›</span>
         </button>
-      </div>
-
-      <div className="field">
-        <label htmlFor={nameId}>商品名</label>
-        <input
-          id={nameId}
-          type="text"
-          value={item.name}
-          placeholder="商品名未認識"
-          autoComplete="off"
-          onChange={(event) => onUpdate({ name: event.target.value })}
-        />
-      </div>
-
-      <div className="field">
-        <label htmlFor={janId}>JAN（8桁 / 13桁）</label>
-        <input
-          id={janId}
-          className="jan-input"
-          type="text"
-          value={item.jan}
-          inputMode="numeric"
-          autoComplete="off"
-          autoCapitalize="off"
-          spellCheck={false}
-          maxLength={13}
-          pattern="[0-9]*"
-          aria-describedby={
-            liveValidation.valid ? janHintId : `${janHintId} ${janErrorId}`
-          }
-          aria-invalid={!liveValidation.valid}
-          onChange={(event) => onUpdate({ jan: event.target.value })}
-        />
-        <span id={janHintId} className="field-hint">
-          半角数字のみ。先頭の0もそのまま入力してください。
-        </span>
-      </div>
-
-      <p className="status-detail">
-        {status === 'invalid' ? (
-          <span id={janErrorId}>{invalidDetail(item.jan)}</span>
-        ) : status === 'needs-review' ? (
-          'チェックデジットは有効です。商品名とJANの対応を確認してください。'
-        ) : (
-          'チェックデジットが一致しています（商品との一致は未確認です）。'
+        {item.confirmed && confirmable && onShowBarcode && (
+          <button type="button" className="button button-quiet item-edit-button"
+            aria-label={`${item.name || '商品名未認識'}の内容を確認・編集`}
+            aria-expanded={expanded} aria-controls={`editor-${item.id}`}
+            onClick={() => setExpanded(!expanded)}>編集</button>
         )}
-      </p>
+      </div>
+      <div className="item-editor" id={`editor-${item.id}`} hidden={!expanded}>
+        <div className="item-card-top">
+          <div className="badge-row">
+            <span className={`badge badge-${status}`}>{statusText[status]}</span>
+            {!item.name.trim() && (
+              <span className="badge badge-neutral">商品名未認識</span>
+            )}
+          </div>
+          <span className="meta-text">
+            {item.source === 'ocr'
+              ? `OCR行 ${item.sourceLine ?? '-'}`
+              : '手入力'}
+          </span>
+          <button
+            type="button"
+            className="button button-danger-quiet item-delete"
+            aria-label={`${item.name.trim() || '商品名未認識'}を削除`}
+            onClick={handleDelete}
+          >
+            削除
+          </button>
+        </div>
 
-      {(item.warnings.length > 0 || duplicateCount > 1) && (
-        <ul className="warning-list">
-          {item.warnings.map((warning) => (
-            <li key={warning}>{warning}</li>
-          ))}
-          {duplicateCount > 1 && (
-            <li>
-              同じJANが他に{duplicateCount - 1}
-              件あります。自動での統合・削除は行っていません。
-            </li>
+        <div className="field">
+          <label htmlFor={nameId}>商品名</label>
+          <input
+            id={nameId}
+            type="text"
+            value={item.name}
+            placeholder="商品名未認識"
+            autoComplete="off"
+            onChange={(event) => onUpdate({ name: event.target.value })}
+          />
+        </div>
+
+        <div className="field">
+          <label htmlFor={janId}>JANコード（8桁・13桁）</label>
+          <input
+            id={janId}
+            className="jan-input"
+            type="text"
+            value={item.jan}
+            inputMode="numeric"
+            autoComplete="off"
+            autoCapitalize="off"
+            spellCheck={false}
+            maxLength={13}
+            pattern="[0-9]*"
+            aria-describedby={
+              liveValidation.valid ? janHintId : `${janHintId} ${janErrorId}`
+            }
+            aria-invalid={!liveValidation.valid}
+            onChange={(event) => onUpdate({ jan: event.target.value })}
+          />
+          <span id={janHintId} className="field-hint">
+            半角数字のみ。先頭の0もそのまま入力してください。
+          </span>
+        </div>
+
+        <p className="status-detail">
+          {status === 'invalid' ? (
+            <span id={janErrorId}>{invalidDetail(item.jan)}</span>
+          ) : status === 'needs-review' ? (
+            'チェックデジットは有効です。商品名とJANの対応を確認してください。'
+          ) : (
+            'チェックデジットが一致しています（商品との一致は未確認です）。'
           )}
-        </ul>
-      )}
-
-      <label className="confirm-row">
-        <input
-          type="checkbox"
-          checked={item.confirmed}
-          disabled={!confirmable}
-          aria-describedby={confirmable ? undefined : confirmHintId}
-          onChange={onToggleConfirm}
-        />
-        <span>商品名とJANを確認しました</span>
-      </label>
-      {!confirmable && (
-        <p id={confirmHintId} className="confirm-hint">
-          JANを修正すると確認できます。
         </p>
-      )}
+
+        {(item.warnings.length > 0 || duplicateCount > 1) && (
+          <ul className="warning-list">
+            {item.warnings.map((warning) => (
+              <li key={warning}>{warning}</li>
+            ))}
+            {duplicateCount > 1 && (
+              <li>
+                同じJANが他に{duplicateCount - 1}
+                件あります。自動での統合・削除は行っていません。
+              </li>
+            )}
+          </ul>
+        )}
+
+        <label className="confirm-row">
+          <input
+            type="checkbox"
+            checked={item.confirmed}
+            disabled={!confirmable}
+            aria-describedby={confirmable ? undefined : confirmHintId}
+            onChange={onToggleConfirm}
+          />
+          <span>商品名とJANを確認しました</span>
+        </label>
+        {!confirmable && (
+          <p id={confirmHintId} className="confirm-hint">
+            JANを修正すると確認できます。
+          </p>
+        )}
+      </div>
     </li>
   );
 }

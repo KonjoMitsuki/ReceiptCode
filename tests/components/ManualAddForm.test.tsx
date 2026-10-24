@@ -12,10 +12,10 @@ describe('ManualAddForm', () => {
 
     await user.type(screen.getByLabelText('商品名（任意）'), '牛乳 1L');
     await user.type(
-      screen.getByLabelText('JAN（8桁 / 13桁）'),
+      screen.getByLabelText('JANコード（8桁・13桁）'),
       '4901234567894',
     );
-    await user.click(screen.getByRole('button', { name: '一覧に追加' }));
+    await user.click(screen.getByRole('button', { name: '商品を追加する' }));
 
     expect(onAdd).toHaveBeenCalledWith('牛乳 1L', '4901234567894');
   });
@@ -26,10 +26,10 @@ describe('ManualAddForm', () => {
 
     render(<ManualAddForm onAdd={onAdd} onCancel={vi.fn()} />);
     await user.type(
-      screen.getByLabelText('JAN（8桁 / 13桁）'),
+      screen.getByLabelText('JANコード（8桁・13桁）'),
       '0123456789012',
     );
-    await user.click(screen.getByRole('button', { name: '一覧に追加' }));
+    await user.click(screen.getByRole('button', { name: '商品を追加する' }));
 
     expect(onAdd).toHaveBeenCalledWith('', '0123456789012');
   });
@@ -40,10 +40,10 @@ describe('ManualAddForm', () => {
 
     render(<ManualAddForm onAdd={onAdd} onCancel={vi.fn()} />);
     await user.type(
-      screen.getByLabelText('JAN（8桁 / 13桁）'),
+      screen.getByLabelText('JANコード（8桁・13桁）'),
       '4901234567890',
     );
-    await user.click(screen.getByRole('button', { name: '一覧に追加' }));
+    await user.click(screen.getByRole('button', { name: '商品を追加する' }));
 
     expect(onAdd).not.toHaveBeenCalled();
     expect(screen.getByRole('alert')).toHaveTextContent(
@@ -56,8 +56,8 @@ describe('ManualAddForm', () => {
     const onAdd = vi.fn();
 
     render(<ManualAddForm onAdd={onAdd} onCancel={vi.fn()} />);
-    await user.type(screen.getByLabelText('JAN（8桁 / 13桁）'), '1234567');
-    await user.click(screen.getByRole('button', { name: '一覧に追加' }));
+    await user.type(screen.getByLabelText('JANコード（8桁・13桁）'), '1234567');
+    await user.click(screen.getByRole('button', { name: '商品を追加する' }));
 
     expect(onAdd).not.toHaveBeenCalled();
     expect(screen.getByRole('alert')).toHaveTextContent(
@@ -70,7 +70,7 @@ describe('ManualAddForm', () => {
     const onCancel = vi.fn();
 
     render(<ManualAddForm onAdd={vi.fn()} onCancel={onCancel} />);
-    await user.click(screen.getByRole('button', { name: '閉じる' }));
+    await user.click(screen.getByRole('button', { name: 'キャンセル' }));
 
     expect(onCancel).toHaveBeenCalledTimes(1);
   });

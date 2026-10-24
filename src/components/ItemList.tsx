@@ -6,11 +6,9 @@ import {
 import { validateJan } from '../lib/jan';
 import type { ReceiptItem } from '../types/receipt';
 import { ItemEditor } from './ItemEditor';
-import { ManualAddForm } from './ManualAddForm';
 
 interface ItemListProps {
   items: ReceiptItem[];
-  manualAddOpen: boolean;
   hasPreparedImage: boolean;
   onUpdateItem: (
     id: string,
@@ -19,7 +17,6 @@ interface ItemListProps {
   onDeleteItem: (id: string) => void;
   onToggleConfirm: (id: string) => void;
   onShowBarcode: (id: string) => void;
-  onAddItem: (name: string, jan: string) => void;
   onManualAddOpenChange: (open: boolean) => void;
   onChooseAnother: () => void;
   onRetryOcr: () => void;
@@ -27,13 +24,11 @@ interface ItemListProps {
 
 export function ItemList({
   items,
-  manualAddOpen,
   hasPreparedImage,
   onUpdateItem,
   onDeleteItem,
   onToggleConfirm,
   onShowBarcode,
-  onAddItem,
   onManualAddOpenChange,
   onChooseAnother,
   onRetryOcr,
@@ -57,48 +52,15 @@ export function ItemList({
   const confirmedCount = items.filter((item) => item.confirmed).length;
 
   return (
-    <main className="screen review-screen">
-      <header className="screen-header review-header">
-        <div>
-          <p className="eyebrow">ステップ 3 / 3</p>
-          <h1>読み取り結果</h1>
-          <p className="lead">
-            商品ごとに商品名とJANを確認してください。確認済みの番号だけバーコードを表示できます。
-          </p>
-        </div>
-        <button
-          type="button"
-          className="button button-secondary button-compact"
-          onClick={onChooseAnother}
-        >
-          別の画像
-        </button>
+    <main className="screen review-screen" tabIndex={-1}>
+      <header className="review-header">
+        <h1>読み取りが完了しました</h1>
+        <div className="success-banner" role="status">✓ {items.length}件のJANコードを検出</div>
       </header>
-
-      <div className="notice notice-warning">
-        <strong>OCRの結果です。スキャンの前に必ず確認してください。</strong>
-        <span>
-          チェックデジットが一致していても、別の商品の番号を読み取っている可能性があります。
-        </span>
+      <div className="results-heading">
+        <h2>検出した商品</h2>
+        <p>内容を確認・編集できます</p>
       </div>
-
-      {items.length > 0 && (
-        <div className="summary-row" aria-label="確認状況">
-          <span className="summary-chip">{items.length}件</span>
-          <span className="summary-chip summary-valid">
-            有効 {validCount}
-          </span>
-          <span className="summary-chip summary-review">
-            要確認 {reviewCount}
-          </span>
-          <span className="summary-chip summary-invalid">
-            無効 {invalidCount}
-          </span>
-          <span className="summary-chip summary-confirmed">
-            確認済み {confirmedCount}
-          </span>
-        </div>
-      )}
 
       {items.length === 0 ? (
         <section className="empty-card">
@@ -145,43 +107,38 @@ export function ItemList({
               onUpdate={(patch) => onUpdateItem(item.id, patch)}
               onDelete={() => onDeleteItem(item.id)}
               onToggleConfirm={() => onToggleConfirm(item.id)}
+              onShowBarcode={() => onShowBarcode(item.id)}
             />
           ))}
         </ul>
       )}
 
+      <button type="button" className="button button-secondary add-item-button"
+        onClick={() => onManualAddOpenChange(true)}>
+        ＋ 商品を手動追加
+      </button>
+
       {items.length > 0 && (
         <div className="bulk-actions">
-          <button
-            type="button"
-            className="button button-primary compact-primary"
-            disabled={scannable.length === 0}
-            onClick={() => onShowBarcode(scannable[0].id)}
-          >
+          <button type="button" className="button button-primary compact-primary"
+            disabled={scannable.length === 0} onClick={() => onShowBarcode(scannable[0].id)}>
             確認済みのバーコードを表示（{scannable.length}件）
           </button>
-          {scannable.length === 0 && (
-            <p className="hint">
-              各商品の「商品名とJANを確認しました」にチェックを入れると、まとめて表示できます。
-            </p>
-          )}
+          <p className="hint">商品名とJANを確認した商品だけバーコードを表示できます。</p>
         </div>
       )}
-
-      {manualAddOpen ? (
-        <ManualAddForm
-          onAdd={onAddItem}
-          onCancel={() => onManualAddOpenChange(false)}
-        />
-      ) : (
-        <button
-          type="button"
-          className="button button-secondary add-item-button"
-          onClick={() => onManualAddOpenChange(true)}
-        >
-          ＋ 手入力で商品を追加
-        </button>
-      )}
+      <details className="review-details">
+        <summary>確認状況・読み取りの操作</summary>
+        <div className="summary-row" aria-label="確認状況">
+          <span>有効 {validCount}</span><span>要確認 {reviewCount}</span>
+          <span>無効 {invalidCount}</span><span>確認済み {confirmedCount}</span>
+        </div>
+        <p className="hint">チェックデジットが一致していても、商品との一致は確認が必要です。</p>
+        <div className="stack-actions">
+          {hasPreparedImage && <button type="button" className="button button-secondary" onClick={onRetryOcr}>同じ画像でもう一度読み取る</button>}
+          <button type="button" className="button button-quiet" onClick={onChooseAnother}>別の画像を選ぶ</button>
+        </div>
+      </details>
 
       <p className="hint review-footer-hint">
         同じJANが複数ある場合も、別明細の可能性があるため自動では統合・削除しません。

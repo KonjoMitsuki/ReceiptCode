@@ -74,7 +74,7 @@ describe('BarcodeViewer', () => {
     expect(
       screen.getByText('画面の明るさを上げてください。'),
     ).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: '集中表示' }));
+    await user.click(screen.getByRole('button', { name: '全画面で表示' }));
 
     expect(
       screen.queryByText('画面の明るさを上げてください。'),

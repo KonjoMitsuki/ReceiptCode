@@ -37,6 +37,7 @@ function renderEditor(overrides: Partial<ReceiptItem> = {}, duplicateCount = 1) 
     </ul>,
   );
 
+  fireEvent.click(screen.getByRole('button', { name: /の内容を確認・編集/ }));
   return { onUpdate, onDelete, onToggleConfirm };
 }
 
@@ -95,7 +96,7 @@ describe('ItemEditor', () => {
 
   it('要確認でもチェックデジットが有効なら確認できる', () => {
     renderEditor({ validation: 'needs-review', confirmed: true });
-    expect(screen.getByText('要確認')).toBeInTheDocument();
+    expect(screen.getAllByText('要確認').length).toBeGreaterThan(0);
     expect(
       screen.getByRole('checkbox', {
         name: '商品名とJANを確認しました',
