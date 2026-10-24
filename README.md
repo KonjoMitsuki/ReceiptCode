@@ -67,7 +67,9 @@ npm run dev
 開発サーバーは既定で GitHub Pages のサブパス `/receipt2jan/` を `base` にします。
 
 - 開発: `http://localhost:5173/receipt2jan/`
-- プレビュー: `npm run build && npm run preview` → `http://localhost:4173/receipt2jan/`
+- プレビュー: `npm run build && npm run preview` → `http://localhost:4173/`
+
+本番ビルドの既定値は相対パス `./` で、Cloudflare Pagesのルートとサブパスの両方へ配信できます。開発時の既定値は `/receipt2jan/` です。
 
 `BASE_PATH` 環境変数で `base` を変更できます（末尾スラッシュは自動補完）。
 
@@ -248,3 +250,7 @@ npm run test:e2e
 - **画像を読み込めない**: JPEG / PNG / WebP に変換して再試行してください。HEIC/HEIFは環境によりデコードできません。
 - **バーコードが読み取れない**: 画面の明るさを上げ、集中表示・横向きを試し、それでも読めない場合は画面のJAN数字をレジに手入力してください。
 - **結果が消えた**: P0では保存していません。再読み込み・タブ終了で失われます。
+
+### Cloudflare Pages
+
+ビルドコマンドは `npm run build`、出力ディレクトリは `dist`。`BASE_PATH` は未設定、または `/` にします。GitHub Pages用の `/ReceiptCode/` や `/receipt2jan/` を指定すると、ドメイン直下では資産の読み込み先が合わなくなります。既存のハッシュ付きデプロイURLは過去の成果物を指すため、修正後のデプロイを開いてください。

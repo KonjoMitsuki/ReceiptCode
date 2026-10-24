@@ -33,7 +33,7 @@ export default defineConfig({
       // 本番ビルドをサブパスで配信し、静的資産と画面遷移を検証する。
       // 常に現在のソースからビルドし、古い成果物でテストしない。
       command:
-        'npm run build && npm run preview -- --host 127.0.0.1 --port 4175 --strictPort',
+        'npm run build && node tests/serve-production.mjs',
       url: previewBaseURL,
       reuseExistingServer: false,
       timeout: 180_000,
