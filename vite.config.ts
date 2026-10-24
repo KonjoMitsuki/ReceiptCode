@@ -9,10 +9,20 @@ function normalizeBase(value: string | undefined): string {
   return withLeadingSlash.endsWith('/') ? withLeadingSlash : `${withLeadingSlash}/`;
 }
 
-// GitHub Pages のプロジェクトページでは、リポジトリ名のサブパスに配備される。
-// 既定値は仕様書の想定に合わせ、Actions では BASE_PATH をリポジトリ名から渡す。
+function resolveBase(): string {
+  // Cloudflare Pages は Production / Preview の全ビルドで CF_PAGES=1 を設定する。
+  // どちらもサイトのルート直下に配信されるため、base は '/' にする。
+  if (process.env.CF_PAGES === '1') {
+    return '/';
+  }
+
+  // GitHub Pages のプロジェクトページでは、リポジトリ名のサブパスに配備される。
+  // 既定値は仕様書の想定に合わせ、Actions では BASE_PATH をリポジトリ名から渡す。
+  return normalizeBase(process.env.BASE_PATH);
+}
+
 export default defineConfig({
-  base: normalizeBase(process.env.BASE_PATH),
+  base: resolveBase(),
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
