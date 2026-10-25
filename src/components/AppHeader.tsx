@@ -8,10 +8,6 @@ interface AppHeaderProps {
 export function AppHeader({ onBack, children }: AppHeaderProps) {
   return (
     <>
-      <div className="design-status-bar" aria-hidden="true">
-        <span>9:41</span>
-        {!onBack && <span className="design-status-icons">●●●  ▰</span>}
-      </div>
       <header className="app-header">
         {onBack ? (
           <button type="button" className="button button-quiet back-link" onClick={onBack}>‹ 商品一覧</button>

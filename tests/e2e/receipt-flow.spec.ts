@@ -153,7 +153,7 @@ test('追加の戻る操作で確認状態を保持し、長い商品名でも�
   }
 });
 
-test('390×844でFigmaの4画面の主要矩形と操作構成が一致する', async ({ page }) => {
+test('疑似ステータスバーを省いた4画面の主要矩形と操作構成を確認する', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await openApp(page);
   await page.evaluate(() => document.fonts.ready);
@@ -164,27 +164,29 @@ test('390×844でFigmaの4画面の主要矩形と操作構成が一致する', 
       expect(Math.abs(box![key as keyof typeof box] - expected), `${selector}.${key}`).toBeLessThanOrEqual(1);
     }
   };
-  await rect('.hero', 16, 137, 358, 142);
-  await rect('.upload-card', 16, 299, 358, 291);
-  await rect('.upload-icon', 151, 328, 88, 88);
-  await rect('.upload-button', 93, 514, 204, 52);
+  await expect(page.getByText('9:41', { exact: true })).toHaveCount(0);
+  await expect(page.locator('.app-header')).toHaveCSS('height', '72px');
+  await rect('.hero', 16, 92, 358, 142);
+  await rect('.upload-card', 16, 254, 358, 291);
+  await rect('.upload-icon', 151, 283, 88, 88);
+  await rect('.upload-button', 93, 469, 204, 52);
   await rect('.bottom-nav', 0, 767, 390, 77);
   await expect(page.getByRole('button', { name: 'JANを手入力して始める' })).toHaveCount(0);
   await startManual(page);
-  await rect('.manual-form > .field:first-of-type', 16, 252, 358, 78);
-  await rect('.validation-hint', 16, 448, 358, 86);
+  await rect('.manual-form > .field:first-of-type', 16, 207, 358, 78);
+  await rect('.validation-hint', 16, 403, 358, 86);
   await rect('.form-actions .button-primary', 32, 635, 326, 54);
   for (const [i, name, jan] of [[0, '緑茶 500ml', '4901234567894'], [1, 'ミネラルウォーター', '4901234560017'], [2, 'チョコレート', '4909876543214']] as const) {
     if (i) await page.getByRole('button', { name: '＋ 商品を手動追加' }).click();
     await addItem(page, name, jan);
     if (i < 2) await confirmCard(cardFor(page, name));
   }
-  await rect('.success-banner', 16, 181, 358, 60);
+  await rect('.success-banner', 16, 136, 358, 60);
   await expect(page.getByRole('button', { name: '次へ', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '次へ', exact: true }).click();
-  await rect('.barcode-sheet', 16, 286, 358, 319);
-  await rect('.barcode-actions .button-primary', 37, 628, 316, 52);
-  await rect('.barcode-actions .button-secondary', 37, 694, 316, 52);
+  await rect('.barcode-sheet', 16, 241, 358, 319);
+  await rect('.barcode-actions .button-primary', 37, 583, 316, 52);
+  await rect('.barcode-actions .button-secondary', 37, 649, 316, 52);
   await expect(page.getByRole('button', { name: '前へ', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: '一覧に戻る' })).toHaveCount(0);
 });
