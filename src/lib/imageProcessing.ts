@@ -1,3 +1,5 @@
+import { detectClippedEdges } from './paperBounds';
+
 export type ImagePreparationErrorCode =
   | 'empty-file'
   | 'unsupported-type'
@@ -21,6 +23,10 @@ export interface PreparedImage {
   previewUrl: string;
   width: number;
   height: number;
+  /** 高解像度OCR用JPEG。小さい画像では preview と同じBlobを共有する。 */
+  ocrBlob: Blob;
+  ocrWidth: number;
+  ocrHeight: number;
   fileName: string;
   warnings: string[];
 }
@@ -28,6 +34,9 @@ export interface PreparedImage {
 export const MAX_INPUT_BYTES = 30 * 1024 * 1024;
 /** 実機計測前の暫定値。OCR精度とメモリ使用量のバランスで調整する。 */
 export const MAX_IMAGE_DIMENSION = 2400;
+/** OCR用画像の上限。24.5MPの元画像でも約12MPに抑える。 */
+export const MAX_OCR_PIXELS = 12_000_000;
+export const MAX_OCR_DIMENSION = 4000;
 
 export function fitWithin(
   width: number,
@@ -42,6 +51,34 @@ export function fitWithin(
   }
 
   const scale = Math.min(1, maxDimension / Math.max(width, height));
+  return {
+    width: Math.max(1, Math.round(width * scale)),
+    height: Math.max(1, Math.round(height * scale)),
+  };
+}
+
+/**
+ * 長辺と総画素数の両方で縮小する。小さい画像は拡大しない。
+ */
+export function fitWithinPixels(
+  width: number,
+  height: number,
+  maxPixels: number,
+  maxDimension: number,
+): { width: number; height: number } {
+  if (width <= 0 || height <= 0) {
+    throw new ImagePreparationError(
+      'decode-failed',
+      '画像のサイズを取得できませんでした。',
+    );
+  }
+
+  const scale = Math.min(
+    1,
+    maxDimension / Math.max(width, height),
+    Math.sqrt(maxPixels / (width * height)),
+  );
+
   return {
     width: Math.max(1, Math.round(width * scale)),
     height: Math.max(1, Math.round(height * scale)),
@@ -103,6 +140,67 @@ async function decodeImage(file: File): Promise<DecodedImage> {
   return decodeWithImageElement(file);
 }
 
+/**
+ * 向き補正済みの寸法が分かった後、ブラウザのリサイズ機能でOCR用画像だけを
+ * 直接デコードする。非対応環境では null を返し、元画像から描画する。
+ */
+async function decodeResized(
+  file: File,
+  width: number,
+  height: number,
+): Promise<DecodedImage | null> {
+  if (typeof createImageBitmap !== 'function') return null;
+
+  try {
+    const bitmap = await createImageBitmap(file, {
+      imageOrientation: 'from-image',
+      resizeWidth: width,
+      resizeHeight: height,
+      resizeQuality: 'high',
+    });
+    if (bitmap.width <= 0 || bitmap.height <= 0) {
+      bitmap.close();
+      return null;
+    }
+    return {
+      source: bitmap,
+      width: bitmap.width,
+      height: bitmap.height,
+      release: () => bitmap.close(),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function drawToCanvas(
+  source: CanvasImageSource,
+  width: number,
+  height: number,
+): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+
+  const context = canvas.getContext('2d', { willReadFrequently: true });
+  if (!context) {
+    canvas.width = 0;
+    canvas.height = 0;
+    throw new ImagePreparationError(
+      'canvas-unavailable',
+      'このブラウザでは画像処理を利用できません。別のブラウザでお試しください。',
+    );
+  }
+
+  // 透過PNGをOCRに渡すと背景が黒くなる場合があるため白で塗る。
+  context.fillStyle = '#ffffff';
+  context.fillRect(0, 0, width, height);
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = 'high';
+  context.drawImage(source, 0, 0, width, height);
+  return canvas;
+}
+
 function canvasToJpeg(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => {
     canvas.toBlob(
@@ -122,8 +220,20 @@ function canvasToJpeg(canvas: HTMLCanvasElement): Promise<Blob> {
   });
 }
 
+function readPreviewPixels(
+  canvas: HTMLCanvasElement,
+): ImageData | null {
+  try {
+    return canvas
+      .getContext('2d', { willReadFrequently: true })
+      ?.getImageData(0, 0, canvas.width, canvas.height) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /**
- * ブラウザ内で画像をデコード・向き補正・縮小し、OCRへ渡すJPEGを作る。
+ * ブラウザ内で画像をデコード・向き補正・縮小し、プレビュー用とOCR用のJPEGを作る。
  * 画像データは外部へ送信しない。
  */
 export async function prepareImage(file: File): Promise<PreparedImage> {
@@ -160,35 +270,32 @@ export async function prepareImage(file: File): Promise<PreparedImage> {
   }
 
   try {
-    const target = fitWithin(
+    const previewTarget = fitWithin(
       decoded.width,
       decoded.height,
       MAX_IMAGE_DIMENSION,
     );
-    const canvas = document.createElement('canvas');
-    canvas.width = target.width;
-    canvas.height = target.height;
+    const ocrTarget = fitWithinPixels(
+      decoded.width,
+      decoded.height,
+      MAX_OCR_PIXELS,
+      MAX_OCR_DIMENSION,
+    );
 
-    const context = canvas.getContext('2d');
-    if (!context) {
-      throw new ImagePreparationError(
-        'canvas-unavailable',
-        'このブラウザでは画像処理を利用できません。別のブラウザでお試しください。',
+    if (
+      ocrTarget.width !== decoded.width ||
+      ocrTarget.height !== decoded.height
+    ) {
+      const resized = await decodeResized(
+        file,
+        ocrTarget.width,
+        ocrTarget.height,
       );
+      if (resized) {
+        decoded.release();
+        decoded = resized;
+      }
     }
-
-    // 透過PNGをOCRに渡すと背景が黒くなる場合があるため白で塗る。
-    context.fillStyle = '#ffffff';
-    context.fillRect(0, 0, target.width, target.height);
-    context.imageSmoothingEnabled = true;
-    context.imageSmoothingQuality = 'high';
-    context.drawImage(decoded.source, 0, 0, target.width, target.height);
-
-    const blob = await canvasToJpeg(canvas);
-    const previewUrl = URL.createObjectURL(blob);
-
-    canvas.width = 0;
-    canvas.height = 0;
 
     const warnings: string[] = [];
     if (Math.min(decoded.width, decoded.height) < 900) {
@@ -197,11 +304,63 @@ export async function prepareImage(file: File): Promise<PreparedImage> {
       );
     }
 
+    let ocrBlob: Blob;
+    let previewBlob: Blob;
+
+    if (
+      ocrTarget.width === previewTarget.width &&
+      ocrTarget.height === previewTarget.height
+    ) {
+      const canvas = drawToCanvas(
+        decoded.source,
+        ocrTarget.width,
+        ocrTarget.height,
+      );
+      const pixels = readPreviewPixels(canvas);
+      if (pixels && detectClippedEdges(pixels).any) {
+        warnings.push(
+          'レシートの端が写真で切れている可能性があります。全体が入るように余白を残して撮影してください。',
+        );
+      }
+      const blob = await canvasToJpeg(canvas);
+      canvas.width = 0;
+      canvas.height = 0;
+      ocrBlob = blob;
+      previewBlob = blob;
+    } else {
+      const ocrCanvas = drawToCanvas(
+        decoded.source,
+        ocrTarget.width,
+        ocrTarget.height,
+      );
+      ocrBlob = await canvasToJpeg(ocrCanvas);
+      ocrCanvas.width = 0;
+      ocrCanvas.height = 0;
+
+      const previewCanvas = drawToCanvas(
+        decoded.source,
+        previewTarget.width,
+        previewTarget.height,
+      );
+      const pixels = readPreviewPixels(previewCanvas);
+      if (pixels && detectClippedEdges(pixels).any) {
+        warnings.push(
+          'レシートの端が写真で切れている可能性があります。全体が入るように余白を残して撮影してください。',
+        );
+      }
+      previewBlob = await canvasToJpeg(previewCanvas);
+      previewCanvas.width = 0;
+      previewCanvas.height = 0;
+    }
+
     return {
-      blob,
-      previewUrl,
-      width: target.width,
-      height: target.height,
+      blob: previewBlob,
+      previewUrl: URL.createObjectURL(previewBlob),
+      width: previewTarget.width,
+      height: previewTarget.height,
+      ocrBlob,
+      ocrWidth: ocrTarget.width,
+      ocrHeight: ocrTarget.height,
       fileName: file.name,
       warnings,
     };

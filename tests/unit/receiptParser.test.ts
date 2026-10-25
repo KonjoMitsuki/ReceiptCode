@@ -7,6 +7,15 @@ import {
   splitReceiptLines,
 } from '../../src/features/receipt/receiptParser';
 import { FIXTURE_RECEIPT_TEXT } from '../../src/lib/testing/receiptFixture';
+import { cleanProductName } from '../../src/features/receipt/lineHeuristics';
+
+describe('OCRで誤読した通貨記号', () => {
+  it('税区分付きのY/y価格を取り除き、商品名のY100は残す', () => {
+    expect(cleanProductName('牛乳 Y100※')).toBe('牛乳');
+    expect(cleanProductName('折りたたみイス y500外')).toBe('折りたたみイス');
+    expect(cleanProductName('商品 Y100')).toBe('商品 Y100');
+  });
+});
 
 describe('normalizeScanLine', () => {
   it('全角数字・全角スペース・各種ダッシュを検出用に正規化する', () => {
@@ -266,5 +275,21 @@ describe('商品名＋価格の直下にJANがある構造', () => {
     expect(
       detectReceiptLayout(splitReceiptLines('牛乳\n4901234567894')),
     ).toBe('generic');
+  });
+
+  it('外税・軽減税率記号を含む価格を取り除いて対応付ける', () => {
+    const text = '牛乳 \\198※\n4901234567894\n食パン ¥298外\n4512345678906';
+    expect(detectReceiptLayout(splitReceiptLines(text))).toBe('jan-below-name');
+    expect(parseReceipt(text).items.map((item) => item.name)).toEqual(['牛乳', '食パン']);
+  });
+
+  it('No.付き管理番号をJAN候補にしない', () => {
+    const text = 'レジ No.:0006 責:99999992\n牛乳 \\198\n4901234567894';
+    expect(parseReceipt(text).items.map((item) => item.jan)).toEqual(['4901234567894']);
+  });
+
+  it('JAN行の文字ノイズより直上の価格付き商品名を優先する', () => {
+    const text = '牛乳 \\198外\nai ae 0 4901234567894\n食パン \\298※\n4512345678906';
+    expect(parseReceipt(text).items.map((item) => item.name)).toEqual(['牛乳', '食パン']);
   });
 });

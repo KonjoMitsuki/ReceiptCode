@@ -72,7 +72,7 @@ class FixtureOcrEngine implements OcrEngine {
       onProgress(progress);
     }
 
-    return { text: this.text };
+    return { text: this.text, lines: [] };
   }
 
   async dispose(): Promise<void> {

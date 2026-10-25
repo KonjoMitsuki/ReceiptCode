@@ -1,3 +1,4 @@
+import { PSM } from 'tesseract.js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createId } from '../../lib/id';
 import {
@@ -6,6 +7,10 @@ import {
   revokePreparedImage,
   type PreparedImage,
 } from '../../lib/imageProcessing';
+import {
+  createOcrTiles,
+  shouldUseTiledOcr,
+} from '../../lib/ocrTiles';
 import {
   defaultOcrEngineFactory,
   OcrCancelledError,
@@ -20,6 +25,10 @@ import {
   getScannableItems,
   validationForJan,
 } from './itemOperations';
+import {
+  mergeOcrLines,
+  type OcrTileResult,
+} from './mergeOcrLines';
 import { parseReceipt } from './receiptParser';
 
 export type FlowScreen =
@@ -97,6 +106,7 @@ export function useReceiptFlow(
   const jobRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
   const engineRef = useRef<OcrEngine | null>(null);
+  const loadChainRef = useRef<Promise<void>>(Promise.resolve());
   const preparedRef = useRef<PreparedImage | null>(null);
   const mountedRef = useRef(true);
 
@@ -108,8 +118,9 @@ export function useReceiptFlow(
       abortRef.current?.abort();
       revokePreparedImage(preparedRef.current);
       preparedRef.current = null;
-      void engineRef.current?.dispose();
+      const engine = engineRef.current;
       engineRef.current = null;
+      void engine?.dispose();
     };
   }, []);
 
@@ -127,7 +138,9 @@ export function useReceiptFlow(
     jobRef.current += 1;
     abortRef.current?.abort();
     abortRef.current = null;
-    void engineRef.current?.dispose();
+    const engine = engineRef.current;
+    engineRef.current = null;
+    void engine?.dispose();
   }, []);
 
   const selectImage = useCallback(
@@ -190,26 +203,113 @@ export function useReceiptFlow(
     }));
 
     let engine: OcrEngine | null = null;
+    let releaseLoad!: () => void;
+    const previousLoad = loadChainRef.current;
+    loadChainRef.current = new Promise<void>((resolve) => {
+      releaseLoad = resolve;
+    });
 
     try {
-      engine = await createOcrEngine();
-      if (controller.signal.aborted || !isCurrent(job)) {
-        await engine.dispose();
-        return;
-      }
-      engineRef.current = engine;
+      // キャンセル直後の再実行で、古いworkerの初期化と新しい初期化を
+      // 並走させない。古い生成が終了するまで待つ。
+      await previousLoad;
+      if (!isCurrent(job) || controller.signal.aborted) return;
 
-      const result = await engine.recognize(prepared.blob, {
+      engine = await createOcrEngine({
         signal: controller.signal,
+        language: shouldUseTiledOcr(prepared.ocrWidth, prepared.ocrHeight)
+          ? 'jpn'
+          : 'jpn+eng',
         onProgress: (progress) => {
           if (!isCurrent(job) || controller.signal.aborted) return;
           setState((current) => ({ ...current, progress }));
         },
       });
+      if (!isCurrent(job) || controller.signal.aborted) {
+        await engine.dispose();
+        return;
+      }
+      engineRef.current = engine;
+
+      let text: string;
+      if (shouldUseTiledOcr(prepared.ocrWidth, prepared.ocrHeight)) {
+        const tileResults: OcrTileResult[] = [];
+        let tileTotal = 0;
+
+        for await (const tile of createOcrTiles(
+          prepared.ocrBlob,
+          controller.signal,
+        )) {
+          if (!isCurrent(job) || controller.signal.aborted) return;
+
+          tileTotal = tile.total;
+          setState((current) => ({
+            ...current,
+            progress: {
+              stage: 'recognizing',
+              ratio: 0.3 + (tile.index / tile.total) * 0.62,
+              message: `分割読み取り ${tile.index + 1}/${tile.total}`,
+            },
+          }));
+
+          const result = await engine.recognize(tile.blob, {
+            signal: controller.signal,
+            onProgress: () => {
+              // タイル単位の進捗を外側で表示するため、内部進捗は使わない。
+            },
+            pageSegMode: PSM.SINGLE_BLOCK,
+          });
+
+          tileResults.push({
+            index: tile.index,
+            sourceY: tile.sourceY,
+            sourceHeight: tile.sourceHeight,
+            transform: tile.transform,
+            lines: result.lines,
+          });
+
+          setState((current) => ({
+            ...current,
+            progress: {
+              stage: 'recognizing',
+              ratio: 0.3 + ((tile.index + 1) / tile.total) * 0.62,
+              message: `分割読み取り ${tile.index + 1}/${tile.total}`,
+            },
+          }));
+        }
+
+        if (!isCurrent(job) || controller.signal.aborted) return;
+        if (tileResults.length === 0 || tileResults.length !== tileTotal) {
+          throw new OcrError(
+            'ocr-failed',
+            '分割読み取りを完了できませんでした。画像を変えて再試行してください。',
+          );
+        }
+
+        setState((current) => ({
+          ...current,
+          progress: {
+            stage: 'parsing',
+            ratio: 0.96,
+            message: '分割した読み取り結果を統合しています',
+          },
+        }));
+        text = mergeOcrLines(tileResults);
+      } else {
+        const result = await engine.recognize(prepared.blob, {
+          signal: controller.signal,
+          onProgress: (progress) => {
+            if (!isCurrent(job) || controller.signal.aborted) return;
+            setState((current) => ({ ...current, progress }));
+          },
+          pageSegMode: PSM.AUTO,
+        });
+        text = result.text;
+      }
 
       if (!isCurrent(job) || controller.signal.aborted) return;
 
-      const parsed = parseReceipt(result.text);
+      const parsed = parseReceipt(text);
       const session: ReceiptSession = {
         id: parsed.items[0]?.receiptId ?? createId(),
         createdAt: new Date().toISOString(),
@@ -264,11 +364,15 @@ export function useReceiptFlow(
         },
       }));
     } finally {
-      if (engine) {
-        await engine.dispose();
-        if (engineRef.current === engine) engineRef.current = null;
+      try {
+        if (engine) {
+          await engine.dispose();
+          if (engineRef.current === engine) engineRef.current = null;
+        }
+      } finally {
+        releaseLoad();
+        if (abortRef.current === controller) abortRef.current = null;
       }
-      if (abortRef.current === controller) abortRef.current = null;
     }
   }, [cancelCurrentWork, createOcrEngine, isCurrent]);
 

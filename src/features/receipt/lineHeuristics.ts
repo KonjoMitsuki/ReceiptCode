@@ -18,7 +18,7 @@ const PRICE_RE =
   /(?:[¥￥\\]\s*[\d,]+|(?<![\d,])[\d,]+\s*円|(?:単価|@)\s*[\d,]+|\d+\s*[%％]\s*(?:OFF|off|引|引き))/;
 
 const TRAILING_PRICE_RE =
-  /(?:[¥￥\\]\s*[\d,]+|(?<![\d,])[\d,]+\s*円)(?:\s*[（(]\s*税(?:込|抜)\s*[)）])?\s*$/;
+  /(?:[¥￥\\]\s*[\d,]+|(?<![\p{L}\d])[Yy]\s*[\d,]+(?=\s*[外内※＊*]\s*$)|(?<![\d,])[\d,]+\s*円)(?:\s*[（(]\s*税(?:込|抜)\s*[)）])?\s*[外内※＊*]?\s*$/u;
 
 const LETTER_RE = /\p{L}/u;
 
@@ -36,6 +36,7 @@ export function isDateOrTimeLine(line: string): boolean {
 
 export function isNonProductLine(line: string): boolean {
   return (
+    /\bNo\s*(?:\.\s*[:：]?|[:：])\s*\d/i.test(line) ||
     SUMMARY_RE.test(line) ||
     META_RE.test(line) ||
     DATE_RE.test(line) ||
@@ -58,6 +59,7 @@ export function hasTrailingPrice(line: string): boolean {
  */
 export function cleanProductName(line: string): string {
   return line
+    .replace(TRAILING_PRICE_RE, ' ')
     .replace(/(?:JAN|EAN|バーコード|商品コード|品番)\s*(?:コード)?\s*[:：]?/gi, ' ')
     .replace(/(?:[¥￥\\]\s*[\d,]+)/g, ' ')
     .replace(/(?<![\d,])[\d,]+\s*円/g, ' ')

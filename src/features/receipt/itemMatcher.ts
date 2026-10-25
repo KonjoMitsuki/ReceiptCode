@@ -88,7 +88,12 @@ export function matchItemNames(
       .map((other) => ({ start: other.start, end: other.end }));
 
     const sameLineName = cleanProductName(removeRanges(line, rangesOnLine));
-    if (isLikelyProductName(sameLineName)) {
+    const previous = previousNonEmptyLine(lines, candidate.lineIndex);
+    // 商品名＋価格の直下にJANがある形式では、JAN行のOCRノイズより
+    // 価格付きの直上行を優先する。同一行に価格もある混在形式は保持する。
+    const preferPrevious = options.layout === 'jan-below-name' &&
+      previous !== null && isNamePriceLine(previous.line) && !isNamePriceLine(line);
+    if (!preferPrevious && isLikelyProductName(sameLineName)) {
       return {
         name: sameLineName,
         source: 'same-line',
@@ -101,7 +106,6 @@ export function matchItemNames(
     // 次の商品名まで候補にすると、すべてのJANが「前後の行に商品名がある」と
     // 誤判定されてしまうため。
     if (options.layout === 'jan-below-name') {
-      const previous = previousNonEmptyLine(lines, candidate.lineIndex);
       const previousHasJan =
         previous !== null &&
         candidates.some((other) => other.lineIndex === previous.index);
