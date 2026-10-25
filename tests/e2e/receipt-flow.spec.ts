@@ -170,7 +170,7 @@ test('疑似ステータスバーを省いた4画面の主要矩形と操作構�
   await rect('.upload-card', 16, 254, 358, 291);
   await rect('.upload-icon', 151, 283, 88, 88);
   await rect('.upload-button', 93, 469, 204, 52);
-  await rect('.bottom-nav', 0, 767, 390, 77);
+  await expect(page.getByRole('navigation', { name: 'メインナビゲーション' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'JANを手入力して始める' })).toHaveCount(0);
   await startManual(page);
   await rect('.manual-form > .field:first-of-type', 16, 207, 358, 78);

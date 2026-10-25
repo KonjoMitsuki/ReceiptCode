@@ -166,12 +166,6 @@ function App({ createOcrEngine }: AppProps) {
         />
       )}
 
-      {flow.screen === 'upload' && (
-        <nav className="bottom-nav" aria-label="メインナビゲーション">
-          <button type="button" aria-current="page"><span aria-hidden="true">▣</span> 読み取る</button>
-          <button type="button" onClick={flow.startManual}><span aria-hidden="true">▤</span> 商品一覧</button>
-        </nav>
-      )}
       {flow.screen === 'review' && !isManual && <div className="results-bottom-bar" aria-hidden="true" />}
     </div>
   );
