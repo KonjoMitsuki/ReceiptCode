@@ -44,14 +44,17 @@ describe('App manual flow', () => {
       name: '商品名とJANを確認しました',
     });
     const bulkBarcodeButton = screen.getByRole('button', {
-      name: /確認済みのバーコードを表示/,
+      name: '次へ',
     });
 
-    expect(bulkBarcodeButton).toHaveTextContent('（0件）');
+    expect(checkbox).toBeChecked();
+    expect(bulkBarcodeButton).toBeEnabled();
+    await user.click(checkbox);
+    expect(within(screen.getByRole('region', { name: 'バーコード表示へ進む' })).getByText('0件')).toBeVisible();
     expect(bulkBarcodeButton).toBeDisabled();
     await user.click(checkbox);
     expect(checkbox).toBeChecked();
-    expect(bulkBarcodeButton).toHaveTextContent('（1件）');
+    expect(within(screen.getByRole('region', { name: 'バーコード表示へ進む' })).getByText('1件')).toBeVisible();
     expect(bulkBarcodeButton).toBeEnabled();
 
     await user.click(bulkBarcodeButton);
@@ -85,7 +88,7 @@ describe('App manual flow', () => {
     expect(checkboxAfterReturn).not.toBeChecked();
     expect(
       screen.getByRole('button', {
-        name: '確認済みのバーコードを表示（0件）',
+        name: '次へ',
       }),
     ).toBeDisabled();
     expect(factory).not.toHaveBeenCalled();
@@ -115,7 +118,7 @@ describe('App manual flow', () => {
     await user.type(screen.getByLabelText('JANコード（8桁・13桁）'), '0123456789012');
     await user.click(screen.getByRole('button', { name: '商品を追加する' }));
     await user.click(screen.getByRole('button', { name: '保存される商品の内容を確認・編集' }));
-    await user.click(screen.getByRole('checkbox'));
+    expect(screen.getByRole('checkbox')).toBeChecked();
 
     for (const exit of ['キャンセル', '‹ 商品一覧']) {
       await user.click(screen.getByRole('button', { name: '＋ 商品を手動追加' }));
@@ -123,7 +126,7 @@ describe('App manual flow', () => {
       await user.type(screen.getByLabelText('商品名'), '未登録の商品');
       await user.click(screen.getByRole('button', { name: exit }));
       expect(screen.getAllByRole('listitem')).toHaveLength(1);
-      expect(screen.getByRole('button', { name: '確認済みのバーコードを表示（1件）' })).toBeEnabled();
+      expect(screen.getByRole('button', { name: '次へ' })).toBeEnabled();
       expect(screen.queryByText('未登録の商品')).not.toBeInTheDocument();
     }
   });
@@ -139,14 +142,14 @@ describe('App manual flow', () => {
       await user.type(screen.getByLabelText('JANコード（8桁・13桁）'), jan);
       await user.click(screen.getByRole('button', { name: '商品を追加する' }));
       const card = screen.getByRole('listitem', { name: `${name} ${jan}` });
-      expect(within(card).getByRole('checkbox')).not.toBeChecked();
+      expect(within(card).getByRole('checkbox')).toBeChecked();
       await user.click(within(card).getByRole('button', { name: `${name}の内容を確認・編集` }));
       expect(screen.queryByRole('main', { name: 'JANバーコード表示' })).not.toBeInTheDocument();
-      await user.click(within(card).getByRole('checkbox'));
+      expect(within(card).getByRole('checkbox')).toBeChecked();
     }
     await user.click(screen.getByRole('button', { name: '商品Bの商品詳細' }));
     expect(screen.queryByRole('main', { name: 'JANバーコード表示' })).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: '確認済みのバーコードを表示（2件）' }));
+    await user.click(screen.getByRole('button', { name: '次へ' }));
     expect(await screen.findByRole('img', { name: 'EAN13 バーコード 4901234567894' })).toBeInTheDocument();
     expect(screen.getByText('1 / 2')).toBeVisible();
     expect(screen.getByRole('button', { name: '前へ' })).toBeDisabled();

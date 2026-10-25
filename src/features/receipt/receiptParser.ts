@@ -259,7 +259,7 @@ export function parseReceipt(
       jan: candidate.jan,
       format: candidate.format,
       validation,
-      confirmed: false,
+      confirmed: candidate.checkDigitValid,
       source: 'ocr',
       sourceLine: candidate.lineIndex + 1,
       warnings: uniqueWarnings([...candidate.warnings, ...nameMatch.warnings]),

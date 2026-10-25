@@ -40,15 +40,17 @@ export function ItemList({ items, onUpdateItem, onDeleteItem, onToggleConfirm, o
           <p>手動追加からJANを入力するか、⋮メニューから画像を読み取り直してください。</p>
         </section>
       )}
-      {items.length > 0 && <section className="review-next-step" aria-label="バーコード表示へ進む">
-        <p>{items.length}件中{scannable.length}件を確認済み</p>
+      <section className="review-next-step" aria-label="バーコード表示へ進む">
+        <p className="review-selected-count" aria-live="polite">
+          <strong>{scannable.length}件</strong>
+          <span>全{items.length}件中</span>
+        </p>
         <button type="button" className="button button-primary"
           disabled={scannable.length === 0}
           onClick={() => onShowBarcode(scannable[0].id)}>
-          確認済みのバーコードを表示（{scannable.length}件）
+          次へ
         </button>
-        <p className="hint">確認済みの有効なJANを一覧の順に表示します。「次へ」で続けて読み取れます。</p>
-      </section>}
+      </section>
       <button type="button" className="button button-secondary add-item-button" onClick={() => onManualAddOpenChange(true)}>
         ＋ 商品を手動追加
       </button>

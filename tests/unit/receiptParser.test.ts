@@ -134,7 +134,7 @@ describe('parseReceipt', () => {
     ]);
 
     expect(parsed.items[3].warnings.join(' ')).toContain('前後の行');
-    expect(parsed.items.every((item) => item.confirmed === false)).toBe(true);
+    expect(parsed.items.map(item => item.confirmed)).toEqual([true, true, true, true, false]);
     expect(parsed.items.every((item) => item.source === 'ocr')).toBe(true);
     expect(parsed.items[0].receiptId).toBe('receipt-test');
     expect(parsed.items[0].sourceLine).toBe(5);

@@ -55,7 +55,7 @@ test(`本番ビルドを ${basePath} で配信し、手入力フローが動く`
   await card
     .getByRole('checkbox', { name: '商品名とJANを確認しました' })
     .check();
-  await page.getByRole('button', { name: /確認済みのバーコードを表示/ }).click();
+  await page.getByRole('button', { name: '次へ', exact: true }).click();
 
   const barcodeScreen = page.getByRole('main', {
     name: 'JANバーコード表示',
