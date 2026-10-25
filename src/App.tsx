@@ -81,6 +81,8 @@ function App({ createOcrEngine }: AppProps) {
     return (
       <BarcodeViewer
         item={flow.barcodeItem}
+        items={flow.scannableItems}
+        onSelect={flow.openBarcode}
         index={flow.barcodeIndex}
         total={flow.scannableItems.length}
         hasPrevious={flow.barcodeIndex > 0}

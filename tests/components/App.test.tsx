@@ -64,7 +64,7 @@ describe('App manual flow', () => {
         name: /EAN13 バーコード 4901234567894/,
       }),
     ).toBeInTheDocument();
-    expect(screen.getByText('テスト商品')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'テスト商品' })).toBeInTheDocument();
     expect(screen.getByText('1 / 1')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '確認画面に戻る' }));

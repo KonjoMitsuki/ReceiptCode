@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { BarcodeProductSheet } from './BarcodeProductSheet';
 import { AppHeader } from './AppHeader';
 import {
   BarcodeRenderError,
@@ -10,6 +11,8 @@ import { useWakeLock } from '../hooks/useWakeLock';
 
 interface BarcodeViewerProps {
   item: ReceiptItem;
+  items?: ReceiptItem[];
+  onSelect?: (id: string) => void;
   index: number;
   total: number;
   hasPrevious: boolean;
@@ -21,6 +24,8 @@ interface BarcodeViewerProps {
 
 export function BarcodeViewer({
   item,
+  items,
+  onSelect,
   index,
   total,
   hasPrevious,
@@ -144,6 +149,7 @@ export function BarcodeViewer({
         <button type="button" className="button button-secondary" disabled={!hasNext} onClick={onNext}>次へ</button>
       </nav>
     </main>
+    {items && onSelect && <BarcodeProductSheet items={items} selectedId={item.id} onSelect={onSelect} />}
     </div>
   );
 }

@@ -252,3 +252,32 @@ main:focus { outline: none; }
   .review-next-step { padding-inline: 16px; }
   .review-next-step .button { min-width: 136px; }
 }
+
+/* A persistent, half-height product picker complements sequential scanning. */
+.barcode-screen, .barcode-screen.is-focus { padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
+.barcode-product-sheet {
+  position: fixed; z-index: 30; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: min(100%, 390px); height: calc(72px + env(safe-area-inset-bottom));
+  max-height: 50dvh; display: flex; flex-direction: column;
+  background: var(--surface-container); border: 1px solid var(--outline-variant);
+  border-bottom: 0; border-radius: 24px 24px 0 0; box-shadow: 0 -4px 24px #1d1b201a;
+  padding-bottom: env(safe-area-inset-bottom); transition: height var(--motion-duration) ease-out;
+}
+.barcode-product-sheet.is-open { height: 50dvh; }
+.barcode-product-sheet.is-dragging { transition: none; }
+.product-sheet-handle { position: relative; display: flex; align-items: center; justify-content: space-between;
+  flex: 0 0 72px; width: 100%; border: 0; border-radius: 24px 24px 0 0;
+  background: transparent; padding: 24px 24px 12px; color: var(--primary); font-size: 15px; font-weight: 700;
+  touch-action: none; user-select: none; cursor: grab;
+}
+.product-sheet-grip { position: absolute; top: 8px; left: calc(50% - 18px); width: 36px; height: 4px; border-radius: 4px; background: var(--outline); }
+.product-sheet-count { margin-left: 8px; color: var(--ink-soft); font-size: 12px; font-weight: 400; }
+.product-sheet-list { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 12px 12px; }
+.product-sheet-list ul { list-style: none; padding: 0; display: grid; gap: 6px; }
+.product-sheet-list button { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 72px;
+  padding: 12px; border: 0; border-radius: 16px; background: var(--surface); text-align: left; }
+.product-sheet-list button[aria-current] { background: var(--primary-container); }
+.product-sheet-list strong { display: block; font-size: 14px; overflow-wrap: anywhere; }
+.product-sheet-list small { display: block; color: var(--ink-soft); margin-top: 4px; font-size: 12px; }
+.product-sheet-index { color: var(--primary); font-size: 12px; }
+.product-sheet-current { margin-left: auto; flex-shrink: 0; color: var(--primary); font-size: 11px; }

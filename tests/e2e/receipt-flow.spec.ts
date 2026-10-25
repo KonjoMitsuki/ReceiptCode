@@ -216,3 +216,34 @@ test('選択件数と次へがスクロール中も画面下に残り、一覧�
   await cardFor(page, '食パン').getByRole('checkbox').uncheck();
   await expect(footer).toContainText('3件');
 });
+
+test('商品シートを半分まで引き上げ、選んだ商品へジャンプして前後移動を続ける', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openApp(page);
+  await startManual(page);
+  await addItem(page, '商品A', '4901234567894');
+  await page.getByRole('button', { name: '＋ 商品を手動追加' }).click();
+  await addItem(page, '商品B', '12345670');
+  await page.getByRole('button', { name: '次へ', exact: true }).click();
+  const sheet = page.getByRole('region', { name: 'バーコードの商品リスト' });
+  const handle = sheet.getByRole('button', { name: '商品リストを開く' });
+  await expect(handle).toBeInViewport();
+  const bounds = (await handle.boundingBox())!;
+  await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + 30);
+  await page.mouse.down();
+  await page.mouse.move(bounds.x + bounds.width / 2, bounds.y - 340, { steps: 12 });
+  await page.mouse.up();
+  await expect(sheet.getByRole('button', { name: '商品リストを閉じる' })).toHaveAttribute('aria-expanded', 'true');
+  await expect.poll(async () => Math.round((await sheet.boundingBox())!.height)).toBe(422);
+  await expect(sheet.getByRole('button', { name: /商品A/ })).toHaveAttribute('aria-current', 'true');
+  await sheet.getByRole('button', { name: /商品B/ }).click();
+  await expect(page.getByRole('img', { name: 'EAN8 バーコード 12345670' })).toBeVisible();
+  await expect(page.getByText('2 / 2', { exact: true })).toBeVisible();
+  await expect(sheet.getByRole('button', { name: '商品リストを開く' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '次へ', exact: true })).toBeDisabled();
+  await page.getByRole('button', { name: '前へ', exact: true }).click();
+  await expect(page.getByRole('img', { name: 'EAN13 バーコード 4901234567894' })).toBeVisible();
+  await sheet.getByRole('button', { name: '商品リストを開く' }).click();
+  await sheet.getByRole('button', { name: '商品リストを閉じる' }).press('Escape');
+  await expect(sheet.getByRole('button', { name: '商品リストを開く' })).toBeFocused();
+});
