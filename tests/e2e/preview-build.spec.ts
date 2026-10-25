@@ -35,7 +35,7 @@ test(`本番ビルドを ${basePath} で配信し、手入力フローが動く`
     .poll(() =>
       page.evaluate(() => getComputedStyle(document.body).backgroundColor),
     )
-    .toBe('rgb(229, 229, 229)');
+    .toBe('rgb(247, 247, 255)');
 
   await page.getByLabel('その他の操作').click();
   await page

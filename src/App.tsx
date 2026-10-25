@@ -95,7 +95,7 @@ function App({ createOcrEngine }: AppProps) {
   }
 
   return (
-    <div className={`app${isManual ? ' manual-app' : ''}`} ref={mainRef}>
+    <div className={`app${isManual ? ' manual-app' : ''}${flow.screen === 'upload' ? ' upload-app' : ''}`} ref={mainRef}>
       <AppHeader onBack={isManual ? () => flow.setManualAddOpen(false) : undefined}>
         {flow.screen === 'upload' && <button type="button" onClick={flow.startManual}>JANを手入力して始める</button>}
         {flow.screen === 'review' && !isManual && <>
@@ -168,7 +168,6 @@ function App({ createOcrEngine }: AppProps) {
         />
       )}
 
-      {flow.screen === 'review' && !isManual && <div className="results-bottom-bar" aria-hidden="true" />}
     </div>
   );
 }
