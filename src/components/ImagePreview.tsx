@@ -14,7 +14,7 @@ export function ImagePreview({
   onManualStart,
 }: ImagePreviewProps) {
   return (
-    <main className="screen preview-screen">
+    <main tabIndex={-1} className="screen preview-screen">
       <header className="screen-header">
         <p className="eyebrow">ステップ 1 / 3</p>
         <h1>画像を確認</h1>

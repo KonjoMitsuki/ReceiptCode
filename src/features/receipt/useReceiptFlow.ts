@@ -380,7 +380,7 @@ export function useReceiptFlow(
         jan,
         format,
         validation,
-        confirmed: false,
+        confirmed: validation === 'valid',
         source: 'manual',
         warnings: [],
       };

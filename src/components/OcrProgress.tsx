@@ -24,7 +24,7 @@ export function OcrProgress({
   const activeStage = stageOrder[progress.stage];
 
   return (
-    <main className="screen processing-screen">
+    <main tabIndex={-1} className="screen processing-screen">
       <header className="screen-header">
         <p className="eyebrow">ステップ 2 / 3</p>
         <h1>レシートを読み取っています</h1>
