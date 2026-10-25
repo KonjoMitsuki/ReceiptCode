@@ -97,10 +97,6 @@ function App({ createOcrEngine }: AppProps) {
       <AppHeader onBack={isManual ? () => flow.setManualAddOpen(false) : undefined}>
         {flow.screen === 'upload' && <button type="button" onClick={flow.startManual}>JANを手入力して始める</button>}
         {flow.screen === 'review' && !isManual && <>
-          <button type="button" disabled={!flow.scannableItems.length}
-            onClick={() => flow.openBarcode(flow.scannableItems[0].id)}>
-            確認済みのバーコードを表示（{flow.scannableItems.length}件）
-          </button>
           {flow.prepared && <button type="button" onClick={() => void flow.startOcr()}>同じ画像でもう一度読み取る</button>}
           <button type="button" onClick={chooseAnother}>別の画像を選ぶ</button>
         </>}

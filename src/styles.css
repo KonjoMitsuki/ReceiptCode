@@ -223,3 +223,11 @@ main:focus { outline: none; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
+
+/* Review once, then scan the confirmed sequence without returning to the list. */
+.item-card > .confirm-row { margin: 0 16px; border-top: 1px solid var(--surface-container); }
+.item-card > .confirm-hint { margin: 0 16px 12px; }
+.review-next-step { display: grid; gap: 12px; margin-top: 24px; }
+.review-next-step > p:first-child { color: var(--primary); font-size: 14px; font-weight: 700; }
+.barcode-screen > .barcode-nav { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; margin: 20px 21px 0; }
+.barcode-screen > .barcode-nav .button { padding-inline: 16px; }

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { getDuplicateJanCounts } from '../features/receipt/itemOperations';
+import { getScannableItems, getDuplicateJanCounts } from '../features/receipt/itemOperations';
 import type { ReceiptItem } from '../types/receipt';
 import { ItemEditor } from './ItemEditor';
 
@@ -14,6 +14,7 @@ interface ItemListProps {
 
 export function ItemList({ items, onUpdateItem, onDeleteItem, onToggleConfirm, onShowBarcode, onManualAddOpenChange }: ItemListProps) {
   const duplicateCounts = useMemo(() => getDuplicateJanCounts(items), [items]);
+  const scannable = getScannableItems(items);
   return (
     <main className="screen review-screen" tabIndex={-1}>
       <header className="review-header">
@@ -30,7 +31,7 @@ export function ItemList({ items, onUpdateItem, onDeleteItem, onToggleConfirm, o
             <ItemEditor key={item.id} item={item} duplicateCount={duplicateCounts.get(item.jan) ?? 1}
               onUpdate={patch => onUpdateItem(item.id, patch)}
               onDelete={() => onDeleteItem(item.id)} onToggleConfirm={() => onToggleConfirm(item.id)}
-              onShowBarcode={() => onShowBarcode(item.id)} />
+              />
           ))}
         </ul>
       ) : (
@@ -39,6 +40,15 @@ export function ItemList({ items, onUpdateItem, onDeleteItem, onToggleConfirm, o
           <p>手動追加からJANを入力するか、⋮メニューから画像を読み取り直してください。</p>
         </section>
       )}
+      {items.length > 0 && <section className="review-next-step" aria-label="バーコード表示へ進む">
+        <p>{items.length}件中{scannable.length}件を確認済み</p>
+        <button type="button" className="button button-primary"
+          disabled={scannable.length === 0}
+          onClick={() => onShowBarcode(scannable[0].id)}>
+          確認済みのバーコードを表示（{scannable.length}件）
+        </button>
+        <p className="hint">確認済みの有効なJANを一覧の順に表示します。「次へ」で続けて読み取れます。</p>
+      </section>}
       <button type="button" className="button button-secondary add-item-button" onClick={() => onManualAddOpenChange(true)}>
         ＋ 商品を手動追加
       </button>

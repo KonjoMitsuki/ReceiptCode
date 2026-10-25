@@ -8,7 +8,6 @@ interface ItemEditorProps {
   onUpdate: (patch: Partial<Pick<ReceiptItem, 'name' | 'jan'>>) => void;
   onDelete: () => void;
   onToggleConfirm: () => void;
-  onShowBarcode?: () => void;
 }
 
 function statusFor(item: ReceiptItem): ValidationState {
@@ -42,7 +41,6 @@ export function ItemEditor({
   onUpdate,
   onDelete,
   onToggleConfirm,
-  onShowBarcode,
 }: ItemEditorProps) {
   const [expanded, setExpanded] = useState(false);
   const liveValidation = validateJan(item.jan);
@@ -70,12 +68,10 @@ export function ItemEditor({
           aria-expanded={expanded} aria-controls={`editor-${item.id}`}
           onClick={() => setExpanded(!expanded)}>▤</button>
         <button type="button" className="item-summary"
-          aria-label={`${item.name || '商品名未認識'}${item.confirmed && confirmable && onShowBarcode ? 'のバーコードを表示' : 'の商品詳細'}`}
-          title={item.confirmed && confirmable ? 'バーコードを表示' : '内容を確認・編集'}
-          aria-expanded={item.confirmed && confirmable && onShowBarcode ? undefined : expanded}
-          aria-controls={item.confirmed && confirmable && onShowBarcode ? undefined : `editor-${item.id}`}
-          onClick={() => item.confirmed && confirmable && onShowBarcode ? onShowBarcode() : setExpanded(!expanded)}>
-
+          aria-label={`${item.name || '商品名未認識'}の商品詳細`}
+          title="内容を確認・編集"
+          aria-expanded={expanded} aria-controls={`editor-${item.id}`}
+          onClick={() => setExpanded(!expanded)}>
           <span className="item-summary-text">
             <strong>{item.name.trim() || '商品名未認識'}</strong>
             <span className="item-jan">{item.jan}</span>
@@ -169,6 +165,7 @@ export function ItemEditor({
           </ul>
         )}
 
+      </div>
         <label className="confirm-row">
           <input
             type="checkbox"
@@ -184,7 +181,6 @@ export function ItemEditor({
             JANを修正すると確認できます。
           </p>
         )}
-      </div>
     </li>
   );
 }

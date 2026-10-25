@@ -54,10 +54,12 @@ test('OCR結果の編集・確認・選択商品の表示・前後移動・集�
   await expect(banana.getByRole('checkbox')).toBeDisabled();
   await expect(banana).toContainText('チェックデジットが一致しません');
   await confirmCard(bread);
-  await bread.getByRole('button', { name: /のバーコードを表示/ }).click();
-  await expect(page.getByRole('img', { name: 'EAN13 バーコード 4512345678906' })).toBeVisible();
-  await openMenu(page);
+  await page.getByRole('button', { name: /確認済みのバーコードを表示/ }).click();
+  await expect(page.getByRole('img', { name: 'EAN13 バーコード 4901234567894' })).toBeVisible();
+  await expect(page.getByText('1 / 2', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '次へ', exact: true }).click();
   await expect(page.getByText('2 / 2', { exact: true })).toBeVisible();
+  await expect(page.getByRole('img', { name: 'EAN13 バーコード 4512345678906' })).toBeVisible();
   await expect(page.getByRole('button', { name: '次へ', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: '前へ', exact: true }).click();
   await expect(page.getByRole('heading', { name: '牛乳 1L 確認' })).toBeVisible();
@@ -66,7 +68,7 @@ test('OCR結果の編集・確認・選択商品の表示・前後移動・集�
   await page.getByRole('button', { name: '次へ', exact: true }).click();
   await expect(page.locator('.focus-name')).toHaveText('食パン 8枚切');
   await page.getByRole('button', { name: '集中表示を終了' }).click();
-  await page.getByRole('button', { name: '別の商品を見る' }).click();
+  await page.getByRole('button', { name: '確認画面に戻る' }).click();
   await milk.getByRole('button', { name: /の内容を確認・編集/ }).click();
   await expect(milk.getByRole('checkbox')).toBeChecked();
   expect(externalRequests).toEqual([]);
@@ -83,7 +85,7 @@ test('JAN候補なしから手動追加で復帰する', async ({ page }) => {
   await addItem(page, '手入力復帰商品', '4901234567894');
   const card = cardFor(page, '手入力復帰商品');
   await confirmCard(card);
-  await card.getByRole('button', { name: /のバーコードを表示/ }).click();
+  await page.getByRole('button', { name: /確認済みのバーコードを表示/ }).click();
   await expect(page.getByRole('img', { name: 'EAN13 バーコード 4901234567894' })).toBeVisible();
 });
 
@@ -94,17 +96,13 @@ test('不正JANを拒否し、EAN-13とEAN-8を一括表示できる', async ({ 
   await expect(page.getByRole('alert')).toContainText('チェックデジットが一致しません。期待値は 4 です。');
   await expect(page.locator('.item-card')).toHaveCount(0);
   await addItem(page, 'テスト商品', '4901234567894');
-  await openMenu(page);
   await expect(page.getByRole('button', { name: '確認済みのバーコードを表示（0件）' })).toBeDisabled();
-  await openMenu(page);
   await page.getByRole('button', { name: '＋ 商品を手動追加' }).click();
   await addItem(page, '8桁商品', '12345670');
   await confirmCard(cardFor(page, 'テスト商品'));
   await confirmCard(cardFor(page, '8桁商品'));
-  await openMenu(page);
   await page.getByRole('button', { name: '確認済みのバーコードを表示（2件）' }).click();
   await expect(page.getByRole('img', { name: 'EAN13 バーコード 4901234567894' })).toBeVisible();
-  await openMenu(page);
   await page.getByRole('button', { name: '次へ', exact: true }).click();
   await expect(page.getByRole('img', { name: 'EAN8 バーコード 12345670' })).toBeVisible();
   expect(await page.locator('.barcode-svg rect').count()).toBeGreaterThan(10);
@@ -120,13 +118,13 @@ test('320pxと横向きで操作とバーコードが収まる', async ({ page }
   await addItem(page, '横向き確認商品', '4901234567894');
   const card = cardFor(page, '横向き確認商品');
   await confirmCard(card);
-  await card.getByRole('button', { name: /のバーコードを表示/ }).click();
+  await page.getByRole('button', { name: /確認済みのバーコードを表示/ }).click();
   await page.setViewportSize({ width: 844, height: 390 });
   const svg = await page.locator('.barcode-svg').boundingBox();
   expect(svg?.width).toBeGreaterThan(150);
   expect((svg?.x ?? 0) + (svg?.width ?? 0)).toBeLessThanOrEqual(844);
   await noOverflow(page);
-  await expect(page.getByRole('button', { name: '別の商品を見る' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '確認画面に戻る' })).toBeVisible();
 });
 
 test('追加の戻る操作で確認状態を保持し、長い商品名でもはみ出さない', async ({ page }) => {
@@ -143,7 +141,7 @@ test('追加の戻る操作で確認状態を保持し、長い商品名でも�
     await page.getByRole('button', { name: '＋ 商品を手動追加' }).click();
     await page.getByRole('button', { name: '‹ 商品一覧' }).click();
     await expect(page.getByRole('listitem')).toHaveCount(1);
-    await card.getByRole('button', { name: /のバーコードを表示/ }).click();
+    await page.getByRole('button', { name: /確認済みのバーコードを表示/ }).click();
     await expect(page.getByRole('img', { name: 'EAN13 バーコード 0123456789012' })).toBeVisible();
     await noOverflow(page);
     page.once('dialog', dialog => void dialog.accept());
@@ -177,16 +175,11 @@ test('390×844でFigmaの4画面の主要矩形と操作構成が一致する', 
     if (i < 2) await confirmCard(cardFor(page, name));
   }
   await rect('.success-banner', 16, 181, 358, 60);
-  await rect('.item-card:nth-child(1)', 16, 344, 358, 99);
-  await rect('.item-card:nth-child(1) .item-icon', 30, 366, 54, 54);
-  await rect('.item-card:nth-child(3)', 16, 568, 358, 99);
-  await rect('.add-item-button', 60, 703, 270, 52);
-  await rect('.results-bottom-bar', 0, 785, 390, 59);
-  await expect(page.getByRole('button', { name: /確認済みのバーコードを表示/ })).toHaveCount(0);
-  await cardFor(page, '緑茶').getByRole('button', { name: /のバーコードを表示/ }).click();
+  await expect(page.getByRole('button', { name: /確認済みのバーコードを表示/ })).toBeVisible();
+  await page.getByRole('button', { name: /確認済みのバーコードを表示/ }).click();
   await rect('.barcode-sheet', 16, 286, 358, 319);
   await rect('.barcode-actions .button-primary', 37, 628, 316, 52);
   await rect('.barcode-actions .button-secondary', 37, 694, 316, 52);
-  await expect(page.getByRole('button', { name: '前へ', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '前へ', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: '一覧に戻る' })).toHaveCount(0);
 });

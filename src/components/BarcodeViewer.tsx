@@ -101,11 +101,6 @@ export function BarcodeViewer({
   return (
     <div className={`app barcode-app${focusMode ? ' is-focus' : ''}`} ref={screenRef}>
       {!focusMode && <AppHeader>
-        <nav className="barcode-nav" aria-label="商品の切り替え">
-          <button type="button" disabled={!hasPrevious} onClick={onPrevious}>前へ</button>
-          <span className="barcode-counter" aria-live="polite">{index + 1} / {total}</span>
-          <button type="button" disabled={!hasNext} onClick={onNext}>次へ</button>
-        </nav>
         <p>{format && formatLabel(format)}</p>
         <p>画面の明るさを上げてください。</p>
         {wakeLockMessage && <p role="status">{wakeLockMessage}</p>}
@@ -141,13 +136,13 @@ export function BarcodeViewer({
         <button type="button" className="button button-primary" onClick={() => void toggleFocus()} aria-pressed={focusMode}>
           {focusMode ? '集中表示を終了' : '全画面で表示'}
         </button>
-        {!focusMode && <button type="button" className="button button-secondary" onClick={() => void close()}>別の商品を見る</button>}
+        {!focusMode && <button type="button" className="button button-secondary" onClick={() => void close()}>確認画面に戻る</button>}
       </div>
-      {focusMode && <nav className="barcode-nav" aria-label="商品の切り替え">
+      <nav className="barcode-nav" aria-label="商品の切り替え">
         <button type="button" className="button button-secondary" disabled={!hasPrevious} onClick={onPrevious}>前へ</button>
-        <span aria-live="polite">{index + 1} / {total}</span>
+        <span className="barcode-counter" aria-live="polite">{index + 1} / {total}</span>
         <button type="button" className="button button-secondary" disabled={!hasNext} onClick={onNext}>次へ</button>
-      </nav>}
+      </nav>
     </main>
     </div>
   );

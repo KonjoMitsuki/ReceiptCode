@@ -43,7 +43,6 @@ describe('App manual flow', () => {
     const checkbox = within(card).getByRole('checkbox', {
       name: '商品名とJANを確認しました',
     });
-    await user.click(screen.getByLabelText('その他の操作'));
     const bulkBarcodeButton = screen.getByRole('button', {
       name: /確認済みのバーコードを表示/,
     });
@@ -65,7 +64,7 @@ describe('App manual flow', () => {
     expect(screen.getByText('テスト商品')).toBeInTheDocument();
     expect(screen.getByText('1 / 1')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: '別の商品を見る' }));
+    await user.click(screen.getByRole('button', { name: '確認画面に戻る' }));
 
     const cardAfterReturn = screen.getByRole('listitem', {
       name: /テスト商品 4901234567894/,
@@ -82,7 +81,6 @@ describe('App manual flow', () => {
     });
     await user.clear(janAfterReturn);
     await user.type(janAfterReturn, '4512345678906');
-    await user.click(screen.getByLabelText('その他の操作'));
 
     expect(checkboxAfterReturn).not.toBeChecked();
     expect(
@@ -125,12 +123,12 @@ describe('App manual flow', () => {
       await user.type(screen.getByLabelText('商品名'), '未登録の商品');
       await user.click(screen.getByRole('button', { name: exit }));
       expect(screen.getAllByRole('listitem')).toHaveLength(1);
-      expect(screen.getByRole('button', { name: '保存される商品のバーコードを表示' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '確認済みのバーコードを表示（1件）' })).toBeEnabled();
       expect(screen.queryByText('未登録の商品')).not.toBeInTheDocument();
     }
   });
 
-  it('未確認カードは編集を開き、確認済みカードは選択した商品のバーコードを開く', async () => {
+  it('商品確認後に一括で進み、次へで順番に表示し、再編集で確認が解除される', async () => {
     const user = userEvent.setup();
     render(<App createOcrEngine={createUnusedFactory()} />);
     await user.click(screen.getByLabelText('その他の操作'));
@@ -141,15 +139,22 @@ describe('App manual flow', () => {
       await user.type(screen.getByLabelText('JANコード（8桁・13桁）'), jan);
       await user.click(screen.getByRole('button', { name: '商品を追加する' }));
       const card = screen.getByRole('listitem', { name: `${name} ${jan}` });
-      expect(within(card).queryByRole('checkbox')).not.toBeInTheDocument();
+      expect(within(card).getByRole('checkbox')).not.toBeChecked();
       await user.click(within(card).getByRole('button', { name: `${name}の内容を確認・編集` }));
       expect(screen.queryByRole('main', { name: 'JANバーコード表示' })).not.toBeInTheDocument();
       await user.click(within(card).getByRole('checkbox'));
     }
-    await user.click(screen.getByRole('button', { name: '商品Bのバーコードを表示' }));
+    await user.click(screen.getByRole('button', { name: '商品Bの商品詳細' }));
+    expect(screen.queryByRole('main', { name: 'JANバーコード表示' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '確認済みのバーコードを表示（2件）' }));
+    expect(await screen.findByRole('img', { name: 'EAN13 バーコード 4901234567894' })).toBeInTheDocument();
+    expect(screen.getByText('1 / 2')).toBeVisible();
+    expect(screen.getByRole('button', { name: '前へ' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: '次へ' }));
     expect(await screen.findByRole('img', { name: 'EAN8 バーコード 12345670' })).toBeInTheDocument();
-    expect(screen.getByText('2 / 2')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: '別の商品を見る' }));
+    expect(screen.getByText('2 / 2')).toBeVisible();
+    expect(screen.getByRole('button', { name: '次へ' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: '確認画面に戻る' }));
     await user.click(screen.getByRole('button', { name: '商品Bの内容を確認・編集' }));
     const card = screen.getByRole('listitem', { name: '商品B 12345670' });
     await user.type(within(card).getByRole('textbox', { name: '商品名' }), '改');

@@ -52,7 +52,6 @@ describe('BarcodeViewer', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('牛乳 1L')).toBeInTheDocument();
     expect(screen.getByText('1 / 2')).toBeInTheDocument();
-    await userEvent.click(screen.getByLabelText('その他の操作'));
     expect(screen.getByRole('button', { name: '前へ' })).toBeDisabled();
     expect(screen.getByRole('button', { name: '次へ' })).toBeEnabled();
   });
@@ -61,11 +60,10 @@ describe('BarcodeViewer', () => {
     const user = userEvent.setup();
     const { onNext, onClose } = renderViewer();
 
-    await user.click(screen.getByLabelText('その他の操作'));
     await user.click(screen.getByRole('button', { name: '次へ' }));
     expect(onNext).toHaveBeenCalledTimes(1);
 
-    await user.click(screen.getByRole('button', { name: '別の商品を見る' }));
+    await user.click(screen.getByRole('button', { name: '確認画面に戻る' }));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
