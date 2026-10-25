@@ -2,11 +2,23 @@ import type { JanCandidate } from './receiptParser';
 import {
   cleanProductName,
   isLikelyProductName,
+  isNamePriceLine,
   removeRanges,
 } from './lineHeuristics';
 
 export type NameSource = 'same-line' | 'previous-line' | 'next-line' | 'none';
 export type NameConfidence = 'high' | 'medium' | 'low';
+
+/**
+ * レシートの商品名とJANの並び方。
+ * - jan-below-name: 「商品名＋価格」の直下にJANがある形式
+ * - generic: 上下どちらにも商品名があり得る形式（従来の近傍行ヒューリスティック）
+ */
+export type ReceiptLayout = 'jan-below-name' | 'generic';
+
+export interface MatchItemNamesOptions {
+  layout?: ReceiptLayout;
+}
 
 export interface ItemNameMatch {
   name: string;
@@ -47,6 +59,18 @@ function nearbyName(
   };
 }
 
+/** 空白行を飛ばして、直近の非空行を返す。 */
+function previousNonEmptyLine(
+  lines: string[],
+  lineIndex: number,
+): { line: string; index: number } | null {
+  for (let index = lineIndex - 1; index >= 0; index -= 1) {
+    const line = lines[index];
+    if (line?.trim()) return { line, index };
+  }
+  return null;
+}
+
 /**
  * OCR行の並びと近接関係だけを使うMVPの対応付け。
  * 同一行 → 直前1行 → 直後1行 → 2行離れた行、の順で候補を探す。
@@ -55,6 +79,7 @@ function nearbyName(
 export function matchItemNames(
   lines: string[],
   candidates: JanCandidate[],
+  options: MatchItemNamesOptions = {},
 ): ItemNameMatch[] {
   return candidates.map((candidate) => {
     const line = lines[candidate.lineIndex] ?? '';
@@ -69,6 +94,37 @@ export function matchItemNames(
         source: 'same-line',
         confidence: 'high',
         warnings: [],
+      };
+    }
+
+    // 「商品名＋価格」の直下にJANがあるレシートでは、直上の商品名だけを採用する。
+    // 次の商品名まで候補にすると、すべてのJANが「前後の行に商品名がある」と
+    // 誤判定されてしまうため。
+    if (options.layout === 'jan-below-name') {
+      const previous = previousNonEmptyLine(lines, candidate.lineIndex);
+      const previousHasJan =
+        previous !== null &&
+        candidates.some((other) => other.lineIndex === previous.index);
+
+      if (previous && !previousHasJan) {
+        const name = cleanProductName(previous.line);
+        if (isLikelyProductName(name)) {
+          return {
+            name,
+            source: 'previous-line',
+            confidence: isNamePriceLine(previous.line) ? 'high' : 'medium',
+            warnings: [],
+          };
+        }
+      }
+
+      return {
+        name: '',
+        source: 'none',
+        confidence: 'low',
+        warnings: [
+          'JANの直上に商品名がありません。商品との対応を確認してください。',
+        ],
       };
     }
 

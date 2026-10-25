@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  detectReceiptLayout,
   extractJanCandidates,
   normalizeScanLine,
   parseReceipt,
@@ -191,5 +192,79 @@ describe('parseReceipt', () => {
     const second = parsed.items[1];
     expect(second.jan).toBe('12345670');
     expect(second.name).toBe('ヨーグルト');
+  });
+});
+
+describe('商品名＋価格の直下にJANがある構造', () => {
+  const receipt = [
+    '牛乳 1L　\\198',
+    '4901234567894',
+    '食パン 8枚切　\\298',
+    '4512345678906',
+    'ヨーグルト 400g　\\300',
+    '(@150 × 2個） 12345670',
+    'りんご 1個　\\198',
+    '4901234567894',
+    'バナナ　\\128',
+    '4901234567890',
+    '合計　\\1,058',
+  ].join('\n');
+
+  it('直下のJANを直上の商品名に割り当てる', () => {
+    const parsed = parseReceipt(receipt);
+
+    expect(
+      parsed.items.map((item) => ({
+        name: item.name,
+        jan: item.jan,
+        validation: item.validation,
+      })),
+    ).toEqual([
+      { name: '牛乳 1L', jan: '4901234567894', validation: 'valid' },
+      { name: '食パン 8枚切', jan: '4512345678906', validation: 'valid' },
+      {
+        name: 'ヨーグルト 400g',
+        jan: '12345670',
+        validation: 'needs-review',
+      },
+      { name: 'りんご 1個', jan: '4901234567894', validation: 'valid' },
+      { name: 'バナナ', jan: '4901234567890', validation: 'invalid' },
+    ]);
+  });
+
+  it('商品名に価格（バックスラッシュ）を含めない', () => {
+    const parsed = parseReceipt('牛乳 1L　\\198\n4901234567894');
+    expect(parsed.items[0].name).toBe('牛乳 1L');
+  });
+
+  it('数量行の単価をJANとして誤検出しない', () => {
+    const parsed = parseReceipt(
+      'ヨーグルト　\\300\n(@12345678 × 2個） 4901234567894',
+    );
+    expect(parsed.items).toHaveLength(1);
+    expect(parsed.items[0].jan).toBe('4901234567894');
+    expect(parsed.items[0].name).toBe('ヨーグルト');
+  });
+
+  it('JANの下に次の商品名があっても「前後の行」警告を出さない', () => {
+    const parsed = parseReceipt(
+      '牛乳 1L　\\198\n4901234567894\n食パン 8枚切　\\298\n4512345678906',
+    );
+    expect(parsed.items.map((item) => item.name)).toEqual([
+      '牛乳 1L',
+      '食パン 8枚切',
+    ]);
+    expect(
+      parsed.items.some((item) => item.warnings.join(' ').includes('前後の行')),
+    ).toBe(false);
+  });
+
+  it('商品名＋価格の下にJANが続く構造を検出する', () => {
+    expect(detectReceiptLayout(splitReceiptLines(receipt))).toBe(
+      'jan-below-name',
+    );
+    expect(
+      detectReceiptLayout(splitReceiptLines('牛乳\n4901234567894')),
+    ).toBe('generic');
   });
 });

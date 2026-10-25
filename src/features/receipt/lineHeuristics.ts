@@ -15,7 +15,10 @@ const HEADER_RE =
   /(?:レシート|領収書|ご来店|ありがとう|営業時間|電話|TEL|FAX|住所|登録番号|店番|レジ\s*(?:NO|No|no|番号|#|担当)|責任者|お買い上げ|明細|株式会社|有限会社|店\s*$|様\s*$)/i;
 
 const PRICE_RE =
-  /(?:[¥￥]\s*[\d,]+|(?<![\d,])[\d,]+\s*円|(?:単価|@)\s*[\d,]+|\d+\s*[%％]\s*(?:OFF|off|引|引き))/;
+  /(?:[¥￥\\]\s*[\d,]+|(?<![\d,])[\d,]+\s*円|(?:単価|@)\s*[\d,]+|\d+\s*[%％]\s*(?:OFF|off|引|引き))/;
+
+const TRAILING_PRICE_RE =
+  /(?:[¥￥\\]\s*[\d,]+|(?<![\d,])[\d,]+\s*円)(?:\s*[（(]\s*税(?:込|抜)\s*[)）])?\s*$/;
 
 const LETTER_RE = /\p{L}/u;
 
@@ -44,6 +47,11 @@ export function hasPrice(line: string): boolean {
   return PRICE_RE.test(line);
 }
 
+/** 行末が「\198」「¥198」「198円」のような価格で終わっているか。 */
+export function hasTrailingPrice(line: string): boolean {
+  return TRAILING_PRICE_RE.test(line);
+}
+
 /**
  * 同じ行にある商品名から、JAN候補・価格・ラベルなどを取り除く。
  * 商品名に含まれる「8枚切」のような数量表現は残す。
@@ -51,7 +59,7 @@ export function hasPrice(line: string): boolean {
 export function cleanProductName(line: string): string {
   return line
     .replace(/(?:JAN|EAN|バーコード|商品コード|品番)\s*(?:コード)?\s*[:：]?/gi, ' ')
-    .replace(/(?:[¥￥]\s*[\d,]+)/g, ' ')
+    .replace(/(?:[¥￥\\]\s*[\d,]+)/g, ' ')
     .replace(/(?<![\d,])[\d,]+\s*円/g, ' ')
     .replace(/(?:単価|@)\s*[\d,]+/g, ' ')
     .replace(/\d+\s*[%％]\s*(?:OFF|off|引|引き)/g, ' ')
@@ -73,6 +81,15 @@ export function isLikelyProductName(line: string): boolean {
   if (/^[\d\s¥￥,.\-–—/]+$/.test(line)) return false;
 
   return true;
+}
+
+/**
+ * 「商品名 198円」のように、行末に価格が付いた商品名行かどうか。
+ * 「商品名＋価格の直下にJAN」というレシート構造の検出に使う。
+ */
+export function isNamePriceLine(line: string): boolean {
+  if (!hasTrailingPrice(line)) return false;
+  return isLikelyProductName(cleanProductName(line));
 }
 
 export interface TextRange {

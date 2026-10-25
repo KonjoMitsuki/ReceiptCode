@@ -5,11 +5,16 @@ import type {
   ReceiptItem,
   ValidationState,
 } from '../../types/receipt';
-import { matchItemNames, type ItemNameMatch } from './itemMatcher';
+import {
+  matchItemNames,
+  type ItemNameMatch,
+  type ReceiptLayout,
+} from './itemMatcher';
 import {
   hasLetters,
   isDateOrTimeLine,
   isJanLabelLine,
+  isNamePriceLine,
   isNonProductLine,
 } from './lineHeuristics';
 
@@ -84,6 +89,31 @@ export function splitReceiptLines(text: string): string[] {
     .map((line) => line.trim());
 }
 
+const QUANTITY_PREFIX_RE =
+  /^\s*[（(]\s*[@＠]\s*[\d,，]+\s*[×xX*＊]\s*\d+\s*(?:個|点|本|枚|袋)?\s*[)）]\s*/;
+
+/**
+ * 「(@150 × 2個） 」のような数量・単価の前置きを、文字数を変えずに空白へ置き換える。
+ * 単価の数字をJAN候補として誤検出しないため、またJANの位置を元の行と揃えるため。
+ */
+function stripQuantityPrefix(line: string): string {
+  const match = QUANTITY_PREFIX_RE.exec(normalizeScanLine(line));
+  if (!match) return line;
+  return ' '.repeat(match[0].length) + line.slice(match[0].length);
+}
+
+/** 空白行を飛ばして、次の非空行を返す。 */
+function nextNonEmptyLine(
+  lines: string[],
+  lineIndex: number,
+): { line: string; index: number } | null {
+  for (let index = lineIndex + 1; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (line?.trim()) return { line, index };
+  }
+  return null;
+}
+
 function classifyLine(line: string): CandidateContext {
   if (isJanLabelLine(line)) return 'jan-label';
   if (isNonProductLine(line)) return 'product';
@@ -105,7 +135,7 @@ function extractFromLine(
   line: string,
   allowShortGroups: boolean,
 ): RawMatch[] {
-  const normalized = normalizeScanLine(line);
+  const normalized = normalizeScanLine(stripQuantityPrefix(line));
   const found: RawMatch[] = [];
 
   for (const match of normalized.matchAll(COMPACT_RE)) {
@@ -228,13 +258,44 @@ export function extractJanCandidates(text: string): JanCandidate[] {
   return extractFromLines(splitReceiptLines(text));
 }
 
+/**
+ * 「商品名＋価格」の行の直下にJANが続くレシートかどうかを判定する。
+ * 2件以上あり、6割以上で直下にJANがあれば、その構造とみなす。
+ */
+export function detectReceiptLayout(lines: string[]): ReceiptLayout {
+  let namePriceLines = 0;
+  let followedByJan = 0;
+
+  lines.forEach((line, index) => {
+    if (!isNamePriceLine(line)) return;
+    namePriceLines += 1;
+
+    const next = nextNonEmptyLine(lines, index);
+    if (!next || isNamePriceLine(next.line)) return;
+
+    if (extractFromLine(next.line, false).length > 0) {
+      followedByJan += 1;
+    }
+  });
+
+  if (
+    namePriceLines >= 2 &&
+    followedByJan >= Math.ceil(namePriceLines * 0.6)
+  ) {
+    return 'jan-below-name';
+  }
+
+  return 'generic';
+}
+
 export function parseReceipt(
   text: string,
   options: ParseReceiptOptions = {},
 ): ParsedReceipt {
   const lines = splitReceiptLines(text);
   const candidates = extractFromLines(lines);
-  const nameMatches = matchItemNames(lines, candidates);
+  const layout = detectReceiptLayout(lines);
+  const nameMatches = matchItemNames(lines, candidates, { layout });
   const receiptId = options.receiptId ?? createId();
   const newId = options.newId ?? createId;
 
