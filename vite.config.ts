@@ -16,7 +16,7 @@ export default defineConfig(({ command, mode }) => ({
   base: normalizeBase(process.env.BASE_PATH ?? (command === 'build' ? './' : undefined)),
   plugins: [react(), googleVisionPlugin({ ...loadEnv(mode, process.cwd(), ''), ...process.env })],
   worker: { format: 'es' },
-  optimizeDeps: { include: ['@paddleocr/paddleocr-js'], exclude: ['paddleocr-worker?url'] },
+  optimizeDeps: { exclude: ['paddleocr-worker?url'] },
   resolve: {
     alias: [{
       // 0.4.2の公式Workerを同一オリジン資産として出力し、中止時に直接終了できるようにする。

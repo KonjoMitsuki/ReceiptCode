@@ -23,7 +23,7 @@ npm run dev
 | エンジン | モデル/設定 | 内部の必須前処理 |
 |---|---|---|
 | Tesseract.js 7.0.0 | `jpn`のみ、LSTM、PSM.AUTO、DPI=300、空白保持 | Leptonicaでデコード・二値化・レイアウト解析 |
-| 公式 `@paddleocr/paddleocr-js` 0.4.2 | `lang: japan`、PP-OCRv5_mobile_det + PP-OCRv5_mobile_rec（日本語対応の多言語モデル）、ONNX Runtime 1.24.3 WASM、1スレッド | 検出リサイズ（min=64、max=4000）、正規化、文字領域切り出し、認識リサイズ |
+| 公式 `@paddleocr/paddleocr-js` 0.4.2 | PP-OCRv5_mobile_det + PP-OCRv5_mobile_rec（日本語対応の多言語モデル）、ONNX Runtime 1.24.3 WASM、1スレッド・認識バッチ1 | 検出リサイズ（長辺最大960px）、正規化、文字領域切り出し、認識リサイズ |
 | Google Cloud Vision | オンライン `DOCUMENT_TEXT_DETECTION` / `languageHints: ja` | 同じ原画像をbase64化。内部前処理・モデル版は非公開 |
 
 通常フローのTesseract `jpn + eng`、最大2400px/JPEG化は維持します。比較ではそのアプリ前処理を通さず、**同じ原Blob**を各アダプターへ渡します。エンジン内の必須処理やGoogleのネットワーク時間を同一化できるとは主張しません。
@@ -59,6 +59,8 @@ PaddleのモデルURLには、配布CDNのCORS応答をオリジン別にキャ�
 
 Paddleは大きなモデル/WASMを扱い、モダンブラウザのWorker/ImageBitmap/OffscreenCanvas等が必要です。資材は遅延ロードし、通常フローでは取得しません。端末によって起動失敗/メモリ不足があり得ます。実機Safari/Androidでの性能検証は未完了です。
 
+省メモリ化のため、SDK本体を画面側に読み込まず、公式WorkerだけでOpenCV/ONNXを実行します。`paddleEngine.ts` の通信形式はSDK 0.4.2に固定しており、更新時は実Workerで初期化→認識→終了の確認が必要です。検出画像の上限を4000pxから960px、認識バッチを1に制限したため、旧履歴とは前処理条件が異なります（各結果に記録）。原Blobは他エンジンと同一です。Workerのエラー・通信失敗・180秒の無応答は失敗結果として扱い、完了・失敗・中止のいずれもWorkerを終了します。
+
 Googleは**開発者向け比較のみ・デフォルト無効**。有効化したい開発者だけ、Git管理外の `.env.local` に設定します（`.env.example` 参照）。
 
 ```dotenv
@@ -81,3 +83,5 @@ Cloud Vision APIと課金を有効にしたプロジェクトで、Vision APIに
 `npm test` は厳密CER/差分/重複照合/集計、同一Blob/逐次実行/エラー継続/中止、IndexedDB、Googleの無効/同意/Origin・Host/上限/サーバーキー/エラー秘匿を検証します。`npm run test:e2e` はローカルOCRを固定エンジンに置き換え、比較画面と既存のJAN/バーコードフローを検証します。Google E2Eは通信モックで、実APIを呼びません。
 
 実装時にはChromiumの静的ビルドで架空レシート `tests/fixtures/receipt-sample.png` を実際のTesseract/Paddleに渡し、両方の認識完了・入力SHA-256一致・資材GET以外の外部通信なし・履歴再読込・日本語UIの320px表示を確認しました。これは精度を保証する実レシート評価ではありません。Google実APIは認証情報未設定のため未実行です。
+
+2026-10-27の省メモリ修正では、Linux上のChromium・WebKitで同じ架空レシートと3024×4032pxに拡大した画像を実Paddleで認識し、画面側にOpenCV/ONNXがロードされないことを確認しました。静的ビルドでも両エンジンのJAN確認画面表示・ページ例外なしを確認しています。WebKitでの検証はiPhone実機のメモリ制限を再現するものではなく、報告された実機での再確認は必要です。
