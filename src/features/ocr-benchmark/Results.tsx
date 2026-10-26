@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { aggregateAccuracy, alignText } from './metrics';
 import { ENGINES } from './engines';
 import type { Accuracy, BenchmarkResult, BenchmarkRun } from './types';
+import ReviewPane from './ReviewPane';
 
 const percentage = (value: number | null) => value === null ? '—' : `${(value * 100).toFixed(2)}%`;
 const milliseconds = (value: number | null) => value === null ? '—' : `${value.toFixed(0)} ms`;
@@ -68,11 +69,11 @@ export default function Results({ run }: { run: BenchmarkRun }) {
             <div><dt>総所要</dt><dd>{milliseconds(result.timings.totalMs)}</dd></div>
           </dl>
           {result.status === 'success' && <>
-            {result.truth.text.trim() ? <>
-              <p className="benchmark-muted">下線: 挿入 / 二重下線: 置換 / 取り消し線: 欠落（正解の文字を表示）</p>
-              <HighlightedText result={result} />
-              <details><summary>OCR原文</summary><pre>{result.text}</pre></details>
-            </> : <><p className="benchmark-muted">OCR原文 · 正解テキスト未登録（差分は表示しません）</p><pre aria-label={`${result.engine.label}のOCR原文`}>{result.text || '認識された文字はありません。'}</pre></>}
+            <ReviewPane key={`${run.id}:${result.sampleId}:${result.engine.id}`} result={result} />
+            <details><summary>OCR原文{result.truth.text.trim() ? '・正解との差分' : ''}（詳細）</summary>
+              {result.truth.text.trim() ? <><p className="benchmark-muted">下線: 挿入 / 二重下線: 置換 / 取り消し線: 欠落（正解の文字を表示）</p><HighlightedText result={result} /></> : null}
+              <pre aria-label={`${result.engine.label}のOCR原文`}>{result.text || '認識された文字はありません。'}</pre>
+            </details>
           </>}
           <details><summary>モデル・前処理・入力条件</summary>
             <p>{result.engine.model}</p><p>{result.engine.preprocessing}</p>

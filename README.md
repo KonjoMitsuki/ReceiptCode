@@ -41,7 +41,7 @@ Figmaの4画面（レシート選択・読み取り結果・バーコード表�
 - 前へ / 次へ、集中表示、Wake Lock（対応環境のみ）、JAN数字の表示
 - モバイル向けUI（320px幅、横向き、44×44 CSS px目安）
 - 単体 / コンポーネント / E2Eテスト、CI、GitHub Pages配信ワークフロー
-- 開発者向け `/dev/ocr-benchmark/`：Tesseract.js 7（`jpn`）・PaddleOCR.js（日本語対応PP-OCRv5）・任意のGoogle Cloud Visionを同一原画像で比較。画像だけでOCR原文・処理時間を並べて表示。正解登録は任意で、登録するとCER/JAN/商品名評価・差分も表示。IndexedDB保存・履歴・削除に対応
+- 比較用ブランチのトップページ：Tesseract.js 7（`jpn`）・PaddleOCR.js（日本語対応PP-OCRv5）・任意のGoogle Cloud Visionを同一原画像で比較。画像だけで従来のJAN確認画面をエンジン別に並べ、商品名・JAN候補と処理時間を比較できます。正解登録は任意で、登録するとCER/JAN/商品名評価・OCR原文の差分も表示。IndexedDB保存・履歴・削除に対応
 
 未実装（P1/P2。前倒ししていません）:
 
@@ -70,7 +70,7 @@ npm run dev
 
 - 開発: `http://localhost:5173/receipt2jan/`
 - プレビュー: `npm run build && npm run preview` → `http://localhost:4173/`
-- ベンチマーク: `http://localhost:5173/receipt2jan/dev/ocr-benchmark/`（`BASE_PATH=/ npm run dev` の場合は `/dev/ocr-benchmark/`）
+- 比較用ブランチのトップ: `http://localhost:5173/receipt2jan/`（`BASE_PATH=/ npm run dev` の場合は `/`）
 
 Google比較はデフォルト無効・ローカル開発サーバー限定です。設定・送信同意・データ処理条件・評価方式は [OCR Benchmark](docs/OCR_Benchmark.md) を確認してください。未設定・静的配信でもローカルエンジンは動作します。
 
@@ -106,7 +106,7 @@ BASE_PATH=/my-repo/ npm run build
 4. 不正JANの拒否、手入力でのEAN-13 / EAN-8追加
 5. 320px幅・横向き表示、サブパス配信、外部送信がないこと
 6. 本番ビルドを `/receipt2jan/` でプレビュー配信し、静的資産と手入力フローが動くこと
-7. ベンチマークの複数画像・差分・保存/再読込・削除、Googleの同意制御、ルート/サブパスからの直接アクセス
+7. ベンチマークの複数画像・JAN確認画面の並列表示・保存/再読込・削除、Googleの同意制御、ルート/サブパスからの直接アクセス
 
 ```bash
 npx playwright install --with-deps chromium
@@ -172,7 +172,7 @@ npm run test:e2e
 2. `main` にpushします。
 3. ワークフロー内で `BASE_PATH=/${{ github.event.repository.name }}/` を渡すため、リポジトリ名のサブパスで配信されます。
 
-開発時の既定の `base` は `/receipt2jan/`、本番ビルドは `./` です。別名のリポジトリに配布する場合は `BASE_PATH` を明示してください。通常フローはサブパス直下、比較画面は `dev/ocr-benchmark/index.html` を独立した静的エントリーとして配信します。
+開発時の既定の `base` は `/receipt2jan/`、本番ビルドは `./` です。別名のリポジトリに配布する場合は `BASE_PATH` を明示してください。この比較用ブランチでは配信ルートにJAN確認画面比較を置きます。mainブランチの標準読み取りフローはそのままです。
 
 ## 設計上の判断
 

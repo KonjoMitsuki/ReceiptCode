@@ -31,7 +31,7 @@ function SampleEditor({ sample, selected, disabled, onSelect, onChange, onDelete
     <div className="benchmark-editor-grid">
       <a ref={previewRef} target="_blank" rel="noreferrer" aria-label={`${sample.name}の原画像を開く`}><img ref={imageRef} alt={`${sample.name}のプレビュー`} width="160" height="220" loading="lazy" /></a>
       <details className="benchmark-fields"><summary>正解データを入力して精度も測る（任意）</summary>
-        <p className="benchmark-muted">入力なしでもOCR原文と処理時間を比較できます。入力した項目だけ精度を計算します。</p>
+        <p className="benchmark-muted">入力なしでもJAN確認画面と処理時間を比較できます。入力した項目だけ精度を計算します。</p>
         <div className="benchmark-field"><label htmlFor={`benchmark-text-${sample.id}`}>正解テキスト · {sample.name}</label><textarea id={`benchmark-text-${sample.id}`} rows={7} maxLength={10_000} disabled={disabled} value={sample.truth.text} onChange={(event) => onChange({ ...sample.truth, text: event.target.value })} /></div>
         <div className="benchmark-field-pair">
           <div className="benchmark-field"><label htmlFor={`benchmark-products-${sample.id}`}>商品名（1行1件）· {sample.name}</label><textarea id={`benchmark-products-${sample.id}`} rows={4} disabled={disabled} defaultValue={sample.truth.productNames.join('\n')} onChange={(event) => onChange({ ...sample.truth, productNames: lines(event.target.value) })} /></div>
@@ -57,6 +57,7 @@ export default function BenchmarkPage({ createEngine }: { createEngine?: Benchma
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const abortRef = useRef<AbortController | null>(null);
+  const resultsRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     let active = true;
@@ -141,6 +142,10 @@ export default function BenchmarkPage({ createEngine }: { createEngine?: Benchma
         // 保存失敗でも画面の結果は維持する。
         await benchmarkStorage.saveRun(run);
         setRuns((previous) => [run, ...previous]);
+        resultsRef.current?.scrollIntoView({
+          behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+          block: 'start',
+        });
       }
       setNotice(controller.signal.aborted ? '比較を中止しました。実行済みの結果は保存しました。' : '比較が完了しました。結果を端末に保存しました。');
     } catch (cause) { setError(message(cause)); } finally {
@@ -160,15 +165,14 @@ export default function BenchmarkPage({ createEngine }: { createEngine?: Benchma
 
   return <main className="benchmark">
     <header className="benchmark-header">
-      <a href={location.pathname.replace(/dev\/ocr-benchmark(?:\/|\/index\.html)?$/, '') || '/'}>← 通常の読み取りへ</a>
       <p className="benchmark-eyebrow">DEVELOPER TOOLS · LOCAL FIRST</p>
-      <h1>OCR Benchmark</h1>
-      <p>レシート画像を選んで比較するだけ。各エンジンのOCR結果と処理時間を同じ原画像で見比べられます。</p>
+      <h1>JAN確認画面を比較</h1>
+      <p>画像を選んで比較すると、各エンジンの読み取り結果を従来のJAN確認画面で左右に並べます。商品名・JANの違いをそのまま確認できます。</p>
     </header>
     <aside className="benchmark-privacy" aria-label="プライバシー方針">
       <strong>本番OCRはローカルファーストを維持します。</strong>
       <p>Tesseract.js・PaddleOCR.jsは端末内で実行します。画像・認識結果は外部送信しません。初回はモデル・実行資材のみダウンロードします。</p>
-      <p>この画面の画像・正解・結果はIndexedDBに保存されます。共有端末での利用に注意し、不要な画像と履歴は削除してください。通常の読み取りフローには保存・Google送信を追加しません。</p>
+      <p>この画面の画像・正解・結果はIndexedDBに保存されます。共有端末での利用に注意し、不要な画像と履歴は削除してください。mainブランチの通常の読み取りフローには保存・Google送信を追加しません。</p>
     </aside>
     {error && <p className="benchmark-error" role="alert">{error}</p>}
     <p role="status" className="benchmark-live">{!loaded ? '端末内のデータを読み込んでいます…' : progress || notice}</p>
@@ -177,7 +181,7 @@ export default function BenchmarkPage({ createEngine }: { createEngine?: Benchma
         <button type="button" disabled={locked || !samples.length} onClick={() => void saveTruth()}>正解データを保存</button></div>
       <label className="benchmark-upload">レシート画像を追加（複数選択可）<input type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={locked} onChange={(event) => void registerImages(event)} /></label>
       <p className="benchmark-muted">JPEG / PNG / WebP・1枚10MB以内。変換・圧縮・分割せず原画像を使います。正解データは任意です。入力した場合は比較開始時に保存します。</p>
-      {!samples.length && <p className="benchmark-empty">まだ画像がありません。画像を追加するだけでOCR結果を比較できます。</p>}
+      {!samples.length && <p className="benchmark-empty">まだ画像がありません。画像を追加するだけでJAN確認画面を比較できます。</p>}
       {samples.map((sample) => <SampleEditor key={sample.id} sample={sample} selected={selectedIds.includes(sample.id)} disabled={locked}
         onSelect={() => { setConsent(false); setSelectedIds((previous) => previous.includes(sample.id) ? previous.filter((id) => id !== sample.id) : [...previous, sample.id]); }}
         onChange={(truth) => { setConsent(false); setSamples((previous) => previous.map((value) => value.id === sample.id ? { ...value, truth } : value)); }}
@@ -199,7 +203,7 @@ export default function BenchmarkPage({ createEngine }: { createEngine?: Benchma
         <label className="benchmark-check"><input type="checkbox" disabled={locked || !googleEnabled || !wantsGoogle} checked={consent} onChange={(event) => setConsent(event.target.checked)} />条件を確認し、この比較で選択中の画像をGoogleに送信することに同意します</label>
       </aside>
       <details className="benchmark-method"><summary>評価指標・計測方法</summary>
-        <p>正解データなしでも認識原文と処理時間を表示します。精度や誤認識のハイライトには手動登録した正解データが必要です。</p>
+        <p>正解データなしでもJAN確認画面と処理時間を表示します。精度やOCR原文の差分には手動登録した正解データが必要です。</p>
         <p>CER = Unicodeコードポイント単位の編集距離 ÷ 正解文字数。改行コード以外は正規化しません。挿入が多い場合は100%を超えます。</p>
         <p>JAN・商品名は全エンジンで既存のレシート解析を共用し、正解リストと完全一致した件数 ÷ 正解件数です。重複は件数ごとに照合します。商品名はJANとの関連付けを含む解析精度にも依存します。未登録の指標は「—」です。</p>
         <p>各画像・各エンジンを新規初期化して逐次実行し、リソース競合を避けます。結果は横並び表示します。初期化はモデル/資材取得と設定、認識は内部前処理を含む実測、総所要は起動から終了処理までです。Googleの認識時間は通信を含みます。取得キャッシュ・回線・端末の状態で時間が変わるため、必要に応じて同じ条件で繰り返してください。画像ハッシュ計算と指標計算は時間に含みません。</p>
@@ -207,7 +211,7 @@ export default function BenchmarkPage({ createEngine }: { createEngine?: Benchma
       <div className="benchmark-actions"><button type="button" className="benchmark-primary" disabled={locked || !selectedIds.length || !engineIds.length || (wantsGoogle && !consent)} onClick={() => void start()}>選択した画像を一括比較</button>
         {running && <button type="button" onClick={() => abortRef.current?.abort()}>比較を中止</button>}</div>
     </section>
-    <section className="benchmark-panel" aria-labelledby="benchmark-history"><h2 id="benchmark-history">3. 比較結果・履歴 <span>{runs.length}回</span></h2>
+    <section ref={resultsRef} className="benchmark-panel" aria-labelledby="benchmark-history"><h2 id="benchmark-history">3. 比較結果・履歴 <span>{runs.length}回</span></h2>
       <div className="benchmark-history">{runs.map((run) => <div className="benchmark-history-row" key={run.id}>
         <button type="button" disabled={busy} aria-pressed={currentRun?.id === run.id} onClick={() => setCurrentRun(run)}>{new Date(run.createdAt).toLocaleString('ja-JP')} · {run.results.length}結果</button>
         <button type="button" className="benchmark-danger" disabled={busy} aria-label={`${new Date(run.createdAt).toLocaleString('ja-JP')}の履歴を削除`} onClick={() => void deleteRun(run.id)}>削除</button>

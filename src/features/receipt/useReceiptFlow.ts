@@ -18,6 +18,7 @@ import type { ReceiptItem, ReceiptSession } from '../../types/receipt';
 import {
   canConfirmItem,
   getScannableItems,
+  updateReceiptItem,
   validationForJan,
 } from './itemOperations';
 import { parseReceipt } from './receiptParser';
@@ -313,43 +314,7 @@ export function useReceiptFlow(
     ) => {
       setState((current) =>
         withItems(current, (items) =>
-          items.map((item) => {
-            if (item.id !== id) return item;
-
-            const janChanged =
-              patch.jan !== undefined && patch.jan !== item.jan;
-            const nextJan = patch.jan ?? item.jan;
-            const nextName = patch.name ?? item.name;
-            const { validation, format } = validationForJan(nextJan);
-
-            let warnings = item.warnings;
-            if (janChanged) {
-              // JANを変えたら、以前のOCR行に基づく警告は引き継がない。
-              warnings = warnings.filter((warning) =>
-                warning.startsWith('商品名'),
-              );
-            }
-            if (patch.name !== undefined && nextName.trim()) {
-              warnings = warnings.filter(
-                (warning) =>
-                  !warning.includes('商品名を推定できませんでした'),
-              );
-            }
-
-            return {
-              ...item,
-              name: nextName,
-              jan: nextJan,
-              format,
-              validation: janChanged
-                ? validation
-                : item.validation === 'invalid'
-                  ? validation
-                  : item.validation,
-              confirmed: false,
-              warnings,
-            };
-          }),
+          items.map((item) => item.id === id ? updateReceiptItem(item, patch) : item),
         ),
       );
     },

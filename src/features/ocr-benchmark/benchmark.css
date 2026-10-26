@@ -68,10 +68,28 @@
 .benchmark-status-success { color: #26643a; font-weight: 600; }
 .benchmark-status-error, .benchmark-status-cancelled { color: #a12323; font-weight: 600; }
 .benchmark-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.benchmark-sample-results > .benchmark-columns { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+.benchmark-review { position: relative; max-width: 390px; margin: 18px auto 0; background: var(--bg); border-radius: 16px; overflow: clip; }
+.benchmark-review .review-screen { padding-bottom: 24px; }
+.benchmark-review .review-next-step { position: sticky; bottom: 0; left: auto; transform: none; width: 100%; margin-top: 20px; padding: 14px 16px; }
+.benchmark-review .review-next-step .button { min-width: 110px; }
+.benchmark-review .button, .benchmark-barcode-overlay .button { min-height: 52px; border: 0; border-radius: 999px; padding: 16px 22px 18px; font-size: 15px; font-weight: 700; }
+.benchmark-review .button-primary, .benchmark-barcode-overlay .button-primary { background: var(--primary); color: white; }
+.benchmark-review .button-secondary, .benchmark-barcode-overlay .button-secondary { background: var(--primary-container); color: var(--primary); }
+.benchmark-review .item-icon, .benchmark-review .item-summary { border: 0; }
+.benchmark-review .item-icon { padding: 0; border-radius: 18px; background: var(--surface-container); color: var(--primary); }
+.benchmark-review .item-summary { padding: 0; background: transparent; text-align: left; }
+.benchmark-review .review-header h1 { font-size: 24px; }
+.benchmark-manual { padding: 20px 16px; }
+.benchmark-barcode-overlay { position: fixed; inset: 0; z-index: 100; overflow-y: auto; background: var(--bg); }
+.benchmark-barcode-overlay .app { min-height: 100dvh; margin: auto; border-radius: 0; }
 @media (max-width: 600px) {
   .benchmark-editor-grid { grid-template-columns: minmax(0, 1fr); }
   .benchmark-editor-grid img { width: 100%; height: 180px; }
   .benchmark-field-pair { grid-template-columns: minmax(0, 1fr); }
   .benchmark-metrics dd { font-size: 17px; }
   .benchmark-sample-heading .benchmark-check { max-width: 100%; }
+}
+@media (max-width: 740px) {
+  .benchmark-sample-results > .benchmark-columns { grid-template-columns: minmax(0, 1fr); }
 }

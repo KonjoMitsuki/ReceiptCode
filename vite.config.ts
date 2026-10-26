@@ -25,12 +25,7 @@ export default defineConfig(({ command, mode }) => ({
     }],
   },
   build: {
-    rollupOptions: {
-      input: {
-        main: fileURLToPath(new URL('./index.html', import.meta.url)),
-        benchmark: fileURLToPath(new URL('./dev/ocr-benchmark/index.html', import.meta.url)),
-      },
-    },
+    rollupOptions: { input: fileURLToPath(new URL('./index.html', import.meta.url)) },
     target: 'es2022',
     sourcemap: false,
   },

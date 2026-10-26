@@ -12,6 +12,27 @@ export function validationForJan(jan: string): {
   };
 }
 
+/** Shared JAN/name edit behavior for the normal and comparison confirmation screens. */
+export function updateReceiptItem(
+  item: ReceiptItem,
+  patch: Partial<Pick<ReceiptItem, 'name' | 'jan'>>,
+): ReceiptItem {
+  const janChanged = patch.jan !== undefined && patch.jan !== item.jan;
+  const nextJan = patch.jan ?? item.jan;
+  const nextName = patch.name ?? item.name;
+  const { validation, format } = validationForJan(nextJan);
+  let warnings = janChanged
+    ? item.warnings.filter((warning) => warning.startsWith('商品名'))
+    : item.warnings;
+  if (patch.name !== undefined && nextName.trim()) {
+    warnings = warnings.filter((warning) => !warning.includes('商品名を推定できませんでした'));
+  }
+  return {
+    ...item, ...patch, format, warnings, confirmed: false,
+    validation: janChanged || item.validation === 'invalid' ? validation : item.validation,
+  };
+}
+
 export function canConfirmItem(item: ReceiptItem): boolean {
   return validateJan(item.jan).valid;
 }

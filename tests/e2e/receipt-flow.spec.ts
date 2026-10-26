@@ -5,7 +5,7 @@ const fixtureImage = path.resolve('tests/fixtures/receipt-sample.png');
 const cardFor = (page: Page, name: string) => page.getByRole('listitem', { name: new RegExp(name) });
 const openMenu = (page: Page) => page.getByLabel('その他の操作').click();
 async function openApp(page: Page) {
-  await page.goto('./');
+  await page.goto('./?receipt-flow');
   await expect(page.getByRole('heading', { name: 'レシートを読み取る' })).toBeVisible();
   expect(new URL(page.url()).pathname).toBe('/receipt2jan/');
 }
@@ -78,7 +78,7 @@ test('OCR結果の編集・確認・選択商品の表示・前後移動・集�
 });
 
 test('JAN候補なしから手動追加で復帰する', async ({ page }) => {
-  await page.goto('./?fixture=empty');
+  await page.goto('./?receipt-flow&fixture=empty');
   await page.locator('#receipt-image-input').setInputFiles(fixtureImage);
   await page.getByRole('button', { name: 'この画像で読み取る' }).click();
   await expect(page.getByRole('heading', { name: '商品を追加' })).toBeVisible({ timeout: 15_000 });

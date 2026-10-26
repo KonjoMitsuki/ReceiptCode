@@ -5,6 +5,7 @@ import { ItemEditor } from './ItemEditor';
 
 interface ItemListProps {
   items: ReceiptItem[];
+  comparison?: boolean;
   onUpdateItem: (id: string, patch: Partial<Pick<ReceiptItem, 'name' | 'jan'>>) => void;
   onDeleteItem: (id: string) => void;
   onToggleConfirm: (id: string) => void;
@@ -12,11 +13,12 @@ interface ItemListProps {
   onManualAddOpenChange: (open: boolean) => void;
 }
 
-export function ItemList({ items, onUpdateItem, onDeleteItem, onToggleConfirm, onShowBarcode, onManualAddOpenChange }: ItemListProps) {
+export function ItemList({ items, comparison = false, onUpdateItem, onDeleteItem, onToggleConfirm, onShowBarcode, onManualAddOpenChange }: ItemListProps) {
   const duplicateCounts = useMemo(() => getDuplicateJanCounts(items), [items]);
   const scannable = getScannableItems(items);
+  const Container = comparison ? 'div' : 'main';
   return (
-    <main className="screen review-screen" tabIndex={-1}>
+    <Container className="screen review-screen" tabIndex={-1}>
       <header className="review-header">
         <h1>読み取りが完了しました</h1>
         <div className="success-banner" role="status">✓  {items.length}件のJANコードを検出</div>
@@ -54,6 +56,6 @@ export function ItemList({ items, onUpdateItem, onDeleteItem, onToggleConfirm, o
       <button type="button" className="button button-secondary add-item-button" onClick={() => onManualAddOpenChange(true)}>
         ＋ 商品を手動追加
       </button>
-    </main>
+    </Container>
   );
 }
