@@ -11,6 +11,7 @@ export interface OcrProgress {
 
 export interface OcrResult {
   text: string;
+  timings?: { initializationMs: number; recognitionMs: number };
 }
 
 export interface OcrRecognizeOptions {
@@ -62,6 +63,12 @@ class TesseractOcrEngine implements OcrEngine {
   private used = false;
   private abortListener: (() => void) | null = null;
 
+  private readonly languages: string[];
+
+  constructor(languages: string[] = ['jpn', 'eng']) {
+    this.languages = languages;
+  }
+
   async recognize(
     image: Blob,
     { signal, onProgress }: OcrRecognizeOptions,
@@ -73,6 +80,7 @@ class TesseractOcrEngine implements OcrEngine {
       );
     }
     this.used = true;
+    const started = performance.now();
 
     let recognizingStarted = false;
     let lastRatio = -1;
@@ -140,7 +148,7 @@ class TesseractOcrEngine implements OcrEngine {
     });
 
     try {
-      const worker = await createWorker(['jpn', 'eng'], OEM.LSTM_ONLY, {
+      const worker = await createWorker(this.languages, OEM.LSTM_ONLY, {
         logger: handleLog,
       });
       this.worker = worker;
@@ -177,6 +185,7 @@ class TesseractOcrEngine implements OcrEngine {
         else signal.addEventListener('abort', onAbort, { once: true });
       });
 
+      const recognitionStarted = performance.now();
       const recognition = worker.recognize(image);
       const result = await Promise.race([recognition, abortPromise]);
 
@@ -188,7 +197,13 @@ class TesseractOcrEngine implements OcrEngine {
         message: '読み取り結果を整理しています',
       });
 
-      return { text: result.data.text ?? '' };
+      return {
+        text: result.data.text ?? '',
+        timings: {
+          initializationMs: recognitionStarted - started,
+          recognitionMs: performance.now() - recognitionStarted,
+        },
+      };
     } catch (error) {
       if (signal.aborted || error instanceof OcrCancelledError) {
         throw new OcrCancelledError();
@@ -227,8 +242,8 @@ class TesseractOcrEngine implements OcrEngine {
   }
 }
 
-export function createTesseractOcrEngine(): OcrEngine {
-  return new TesseractOcrEngine();
+export function createTesseractOcrEngine(languages?: string[]): OcrEngine {
+  return new TesseractOcrEngine(languages);
 }
 
 export const defaultOcrEngineFactory: OcrEngineFactory = async () =>

@@ -5,7 +5,7 @@
 - プロジェクト名: **Receipt2JAN**
 - 対象端末: iPhone Safari / Android Chrome（店舗業務での私物端末利用は店舗管理者の許可を得てください）
 - 配信: GitHub Pages（公開URL: <https://konjomitsuki.github.io/ReceiptCode/>、サブパス配信に対応）
-- **サーバー処理・ログイン・DB・外部OCR APIはありません。**レシート画像とOCR結果は端末のブラウザ内だけで処理します。
+- **通常の読み取りはサーバー処理・ログイン・外部OCR APIなしのローカルファーストです。** 開発者向けの[OCRベンチマーク](docs/OCR_Benchmark.md)のみ端末内IndexedDBを使用し、明示同意した場合だけGoogle比較を利用できます。
 
 > [!IMPORTANT]
 > **実機検証は未完了です。**
@@ -41,14 +41,15 @@ Figmaの4画面（レシート選択・読み取り結果・バーコード表�
 - 前へ / 次へ、集中表示、Wake Lock（対応環境のみ）、JAN数字の表示
 - モバイル向けUI（320px幅、横向き、44×44 CSS px目安）
 - 単体 / コンポーネント / E2Eテスト、CI、GitHub Pages配信ワークフロー
+- 開発者向け `/dev/ocr-benchmark/`：Tesseract.js 7（`jpn`）・PaddleOCR.js（日本語対応PP-OCRv5）・任意のGoogle Cloud Visionを同一原画像で比較。正解登録、CER/JAN/商品名評価、時間計測、差分表示、IndexedDB保存・履歴・削除
 
 未実装（P1/P2。前倒ししていません）:
 
-- 端末内履歴（IndexedDB）、検索・削除
+- 通常の読み取りフローの端末内履歴、検索・削除（ベンチマークの保存とは別）
 - PWA / オフラインキャッシュ / ホーム画面追加
 - 画像の回転・台形補正・トリミング・コントラスト補正
 - 数字専用OCRの二段階処理、OCR bounding boxを使った高精度対応付け
-- ダークモード、スキャナー別ガイド、OCR精度評価画面
+- ダークモード、スキャナー別ガイド
 - 共有機能、商品マスタ連携、POS連携
 
 ## 動作環境
@@ -69,6 +70,9 @@ npm run dev
 
 - 開発: `http://localhost:5173/receipt2jan/`
 - プレビュー: `npm run build && npm run preview` → `http://localhost:4173/`
+- ベンチマーク: `http://localhost:5173/receipt2jan/dev/ocr-benchmark/`（`BASE_PATH=/ npm run dev` の場合は `/dev/ocr-benchmark/`）
+
+Google比較はデフォルト無効・ローカル開発サーバー限定です。設定・送信同意・データ処理条件・評価方式は [OCR Benchmark](docs/OCR_Benchmark.md) を確認してください。未設定・静的配信でもローカルエンジンは動作します。
 
 本番ビルドの既定値は相対パス `./` で、Cloudflare Pagesのルートとサブパスの両方へ配信できます。開発時の既定値は `/receipt2jan/` です。
 
@@ -102,6 +106,7 @@ BASE_PATH=/my-repo/ npm run build
 4. 不正JANの拒否、手入力でのEAN-13 / EAN-8追加
 5. 320px幅・横向き表示、サブパス配信、外部送信がないこと
 6. 本番ビルドを `/receipt2jan/` でプレビュー配信し、静的資産と手入力フローが動くこと
+7. ベンチマークの複数画像・差分・保存/再読込・削除、Googleの同意制御、ルート/サブパスからの直接アクセス
 
 ```bash
 npx playwright install --with-deps chromium
@@ -123,6 +128,8 @@ npm run test:e2e
 同じJANが複数ある場合も、別明細や数量違いの可能性があるため自動で統合・削除しません。必要に応じて人間が判断してください。
 
 ## プライバシーと外部通信
+
+以下は**通常の読み取りフロー**の方針です。開発者向けベンチマークの保存・任意のGoogle送信は[別途説明](docs/OCR_Benchmark.md#プライバシーとgoogle比較)しています。本番の標準OCRにGoogleは組み込みません。
 
 - レシート画像、OCR原文、JAN候補、商品名は外部サーバーへ送信しません。
 - OCRは Tesseract.js の Web Worker として端末のブラウザ内で実行します。
@@ -147,13 +154,13 @@ npm run test:e2e
 |---|---|
 | 言語 | TypeScript 5.9.3（strict） |
 | UI | React 19.3.1 + Vite 8.3.4 |
-| OCR | Tesseract.js 7.0.0（`jpn` + `eng`） |
+| OCR | 通常: Tesseract.js 7.0.0（`jpn` + `eng`）。比較専用: `jpn`、公式 `@paddleocr/paddleocr-js` 0.4.2 / PP-OCRv5、任意のGoogle Vision |
 | バーコード | JsBarcode 3.12.3（SVG、EAN-13 / EAN-8） |
 | テスト | Vitest 5.0.5 + React Testing Library / Playwright 1.64.1 |
 | 静的配信 | GitHub Pages（プロジェクトページのサブパス） |
-| 永続化 | なし（P0。P1でIndexedDBを想定） |
+| 永続化 | 通常はなし。開発者向け比較画面のみIndexedDB |
 
-依存ライブラリは `package-lock.json` で固定しています。主なライセンスは React / Vite / JsBarcode が MIT、Tesseract.js が Apache-2.0 です。Tesseract.js の言語データは各配布元のライセンスに従います。
+依存ライブラリは `package-lock.json` で固定しています。主なライセンスは React / Vite / JsBarcode が MIT、Tesseract.js / PaddleOCR.js が Apache-2.0 です。OCRモデル・言語データは各配布元のライセンスに従います。
 
 ## GitHub Pagesへの配布
 
@@ -165,7 +172,7 @@ npm run test:e2e
 2. `main` にpushします。
 3. ワークフロー内で `BASE_PATH=/${{ github.event.repository.name }}/` を渡すため、リポジトリ名のサブパスで配信されます。
 
-既定の `base` は `/receipt2jan/` です。ローカルで別名のリポジトリに配布する場合は `BASE_PATH` を明示してください。アプリはルーターを使わない単一画面の状態遷移のみで、サブパス直下で動作します。
+開発時の既定の `base` は `/receipt2jan/`、本番ビルドは `./` です。別名のリポジトリに配布する場合は `BASE_PATH` を明示してください。通常フローはサブパス直下、比較画面は `dev/ocr-benchmark/index.html` を独立した静的エントリーとして配信します。
 
 ## 設計上の判断
 
@@ -216,7 +223,7 @@ npm run test:e2e
 - 初回OCRは言語データの取得に時間がかかり、通信失敗時は再試行が必要です。
 - Wake Lock 非対応ブラウザでは、端末の自動ロック設定を手動で調整する必要があります。
 - 画像の最大2400px・30MBは実機計測前の暫定値です。
-- P1/P2の履歴・PWA・オフライン起動は未実装です。
+- 通常フローの履歴・PWA・オフライン起動は未実装です。比較データはブラウザの保存設定やサイトデータ削除で消えるためバックアップ用途ではありません。
 - GitHub Pages のアプリURLは誰でも閲覧できます。認証はありませんが、各端末の処理データは共有されません。
 
 ## ディレクトリ構成

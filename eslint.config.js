@@ -40,6 +40,7 @@ export default tseslint.config(
       'vitest.config.ts',
       'playwright.config.ts',
       'eslint.config.js',
+      'server/**/*.ts',
     ],
     languageOptions: { globals: globals.node },
   },

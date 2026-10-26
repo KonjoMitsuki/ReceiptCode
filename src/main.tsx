@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import App from './App';
+import Root from './Root';
 import type { OcrEngineFactory } from './lib/ocr';
 import './styles.css';
 
@@ -19,6 +19,6 @@ if (!root) throw new Error('root element not found');
 
 createRoot(root).render(
   <StrictMode>
-    <App createOcrEngine={e2eOcrFactory} />
+    <Root createOcrEngine={e2eOcrFactory} />
   </StrictMode>,
 );

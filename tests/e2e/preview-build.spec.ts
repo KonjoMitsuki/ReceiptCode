@@ -69,3 +69,18 @@ test(`本番ビルドを ${basePath} で配信し、手入力フローが動く`
 });
 
 }
+
+for (const basePath of ['/', '/receipt2jan/']) {
+  test(`本番の比較ページを ${basePath}dev/ocr-benchmark/ から直接開ける`, async ({ page }) => {
+    const failures: string[] = [];
+    page.on('response', (response) => { if (response.status() >= 400 && !response.url().includes('/api/dev/')) failures.push(response.url()); });
+    await page.goto(`http://127.0.0.1:4175${basePath}dev/ocr-benchmark/`);
+    await expect(page.getByRole('heading', { name: 'OCR Benchmark', exact: true })).toBeVisible();
+    await expect(page.getByRole('checkbox', { name: 'Google Cloud Vision', exact: true })).toBeDisabled();
+    await expect(page.getByRole('checkbox', { name: 'Tesseract.js 7', exact: true })).toBeEnabled();
+    await page.getByRole('link', { name: '← 通常の読み取りへ' }).click();
+    await expect(page.getByRole('heading', { name: 'レシートを読み取る' })).toBeVisible();
+    expect(new URL(page.url()).pathname).toBe(basePath);
+    expect(failures).toEqual([]);
+  });
+}
