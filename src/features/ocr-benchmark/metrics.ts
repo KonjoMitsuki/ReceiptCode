@@ -87,8 +87,8 @@ export function evaluate(truth: GroundTruth, text: string): Accuracy {
   // 全エンジン共通の既存パーサーで抽出し、重複も1件ずつ消費する。
   const parsed = parseReceipt(text);
   return accuracyFromCounts({
-    characterErrors: characterDistance(truth.text, text),
-    characters: Array.from(normalizeText(truth.text)).length,
+    characterErrors: truth.text.trim() ? characterDistance(truth.text, text) : 0,
+    characters: truth.text.trim() ? Array.from(normalizeText(truth.text)).length : 0,
     janMatches: countMatches(truth.jans, parsed.candidates.map((item) => item.jan)),
     janCount: truth.jans.length,
     productMatches: countMatches(truth.productNames, parsed.items.map((item) => item.name)),

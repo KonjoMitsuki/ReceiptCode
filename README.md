@@ -41,7 +41,7 @@ Figmaの4画面（レシート選択・読み取り結果・バーコード表�
 - 前へ / 次へ、集中表示、Wake Lock（対応環境のみ）、JAN数字の表示
 - モバイル向けUI（320px幅、横向き、44×44 CSS px目安）
 - 単体 / コンポーネント / E2Eテスト、CI、GitHub Pages配信ワークフロー
-- 開発者向け `/dev/ocr-benchmark/`：Tesseract.js 7（`jpn`）・PaddleOCR.js（日本語対応PP-OCRv5）・任意のGoogle Cloud Visionを同一原画像で比較。正解登録、CER/JAN/商品名評価、時間計測、差分表示、IndexedDB保存・履歴・削除
+- 開発者向け `/dev/ocr-benchmark/`：Tesseract.js 7（`jpn`）・PaddleOCR.js（日本語対応PP-OCRv5）・任意のGoogle Cloud Visionを同一原画像で比較。画像だけでOCR原文・処理時間を並べて表示。正解登録は任意で、登録するとCER/JAN/商品名評価・差分も表示。IndexedDB保存・履歴・削除に対応
 
 未実装（P1/P2。前倒ししていません）:
 

@@ -9,7 +9,6 @@ export const noSplitStrategy: ImageStrategy = {
 };
 
 export function validateTruth(sample: BenchmarkSample): string | null {
-  if (!sample.truth.text.trim()) return `${sample.name}: 正解テキストを入力してください。`;
   if (Array.from(sample.truth.text).length > 10_000) return `${sample.name}: 正解テキストは10,000文字以内にしてください。`;
   if (sample.truth.jans.some((jan) => !/^(?:\d{8}|\d{13})$/.test(jan))) {
     return `${sample.name}: 正解JANは半角数字8桁または13桁で入力してください。`;
@@ -75,7 +74,9 @@ export async function runBenchmark(options: {
           inputSha256, inputBytes: image.size, engine: { ...descriptor },
           truth: structuredClone(sample.truth), text: output?.text ?? '',
           status: signal.aborted ? 'cancelled' : error ? 'error' : 'success', error,
-          accuracy: output && !error && !signal.aborted ? evaluate(sample.truth, output.text) : undefined,
+           accuracy: output && !error && !signal.aborted &&
+             (sample.truth.text.trim() || sample.truth.productNames.length || sample.truth.jans.length)
+             ? evaluate(sample.truth, output.text) : undefined,
           timings: {
             initializationMs: output?.timings ? factoryMs + output.timings.initializationMs : null,
             recognitionMs: output?.timings?.recognitionMs ?? null, totalMs,

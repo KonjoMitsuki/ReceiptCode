@@ -16,9 +16,8 @@ test('複数画像の比較・差分・IndexedDB再読込・履歴削除と320px
     { name: 'receipt-sample.png', mimeType: 'image/png', buffer },
     { name: 'second.png', mimeType: 'image/png', buffer },
   ]);
-  await page.getByRole('button', { name: '選択した画像を一括比較' }).click();
-  await expect(page.getByRole('alert')).toContainText('正解テキスト');
   for (const name of ['receipt-sample.png', 'second.png']) {
+    await page.locator('.benchmark-sample').filter({ has: page.getByRole('checkbox', { name, exact: true }) }).getByText('正解データを入力して精度も測る（任意）').click();
     await page.getByLabel(`正解テキスト · ${name}`, { exact: true }).fill('牛肉\n4901234567894');
     await page.getByLabel(`商品名（1行1件）· ${name}`).fill('牛乳');
     await page.getByLabel(`JAN（1行1件・8桁/13桁）· ${name}`).fill('4901234567894');
@@ -37,8 +36,23 @@ test('複数画像の比較・差分・IndexedDB再読込・履歴削除と320px
   page.on('dialog', (dialog) => dialog.accept());
   await page.locator('.benchmark-sample').filter({ has: page.getByRole('checkbox', { name: 'receipt-sample.png', exact: true }) }).getByRole('button', { name: '画像と関連履歴を削除' }).click();
   await expect(page.locator('.benchmark-history-row')).toHaveCount(0);
-  await expect(page.getByLabel('正解テキスト · second.png', { exact: true })).toBeVisible();
+  await expect(page.getByRole('checkbox', { name: 'second.png', exact: true })).toBeVisible();
   expect(external).toEqual([]);
+});
+
+test('正解入力なしでOCR原文と時間を横並び表示し、履歴に残す', async ({ page }) => {
+  await page.goto('dev/ocr-benchmark/');
+  await page.getByLabel('レシート画像を追加（複数選択可）').setInputFiles(fixture);
+  await page.getByRole('button', { name: '選択した画像を一括比較' }).click();
+  await expect(page.getByRole('status')).toContainText('比較が完了しました');
+  await expect(page.locator('.benchmark-sample-results .benchmark-result-card')).toHaveCount(2);
+  await expect(page.locator('.benchmark-sample-results pre[aria-label$="のOCR原文"]')).toHaveCount(2);
+  await expect(page.locator('.benchmark-sample-results')).toContainText('総所要');
+  await expect(page.locator('.benchmark-results mark')).toHaveCount(0);
+  await expect(page.locator('.benchmark-sample-results')).not.toContainText('CER');
+  await page.reload();
+  await page.locator('.benchmark-history-row > button').first().click();
+  await expect(page.locator('.benchmark-sample-results pre[aria-label$="のOCR原文"]')).toHaveCount(2);
 });
 
 test('Googleは明示同意した実行だけ送信し、次回は同意し直す', async ({ page }) => {
@@ -53,6 +67,7 @@ test('Googleは明示同意した実行だけ送信し、次回は同意し直�
   });
   await page.goto('dev/ocr-benchmark/');
   await page.getByLabel('レシート画像を追加（複数選択可）').setInputFiles(fixture);
+  await page.locator('.benchmark-sample summary').click();
   await page.getByLabel('正解テキスト · receipt-sample.png', { exact: true }).fill('牛乳');
   await page.getByRole('checkbox', { name: 'Tesseract.js 7', exact: true }).uncheck();
   await page.getByRole('checkbox', { name: 'PaddleOCR.js', exact: true }).uncheck();

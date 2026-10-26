@@ -28,11 +28,12 @@ export default function Results({ run }: { run: BenchmarkRun }) {
   const sampleIds = [...new Set(run.results.map((result) => result.sampleId))];
   return <div className="benchmark-results">
     <h3>集計</h3>
-    <p className="benchmark-muted">成功結果の分母を合算するマイクロ平均。エラー・中止は精度の分母から除外し、件数を別表示します。</p>
+    <p className="benchmark-muted">時間は成功した全結果の平均。精度は正解を登録した項目のみのマイクロ平均です。エラー・中止は別件数で表示します。</p>
     <div className="benchmark-columns">
       {ENGINES.filter((engine) => run.results.some((result) => result.engine.id === engine.id)).map((engine) => {
         const results = run.results.filter((result) => result.engine.id === engine.id);
-        const successful = results.filter((result) => result.status === 'success' && result.accuracy);
+        const successful = results.filter((result) => result.status === 'success');
+        const scored = successful.filter((result) => result.accuracy);
         const average = (key: keyof BenchmarkResult['timings']) => {
           const values = successful.map((result) => result.timings[key]).filter((value) => value !== null);
           return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
@@ -40,7 +41,7 @@ export default function Results({ run }: { run: BenchmarkRun }) {
         return <article className="benchmark-result-card" key={engine.id}>
           <h4>{engine.label}</h4>
           <p>成功 {successful.length} / {results.length}件 · エラー {results.filter((r) => r.status === 'error').length} · 中止 {results.filter((r) => r.status === 'cancelled').length}</p>
-          <AccuracyValues accuracy={aggregateAccuracy(successful.map((result) => result.accuracy!))} />
+          {scored.length ? <AccuracyValues accuracy={aggregateAccuracy(scored.map((result) => result.accuracy!))} /> : <p className="benchmark-muted">正解データ未登録のため精度は未計算</p>}
           <dl className="benchmark-timings">
             <div><dt>平均初期化</dt><dd>{milliseconds(average('initializationMs'))}</dd></div>
             <div><dt>平均認識</dt><dd>{milliseconds(average('recognitionMs'))}</dd></div>
@@ -53,23 +54,25 @@ export default function Results({ run }: { run: BenchmarkRun }) {
       const results = run.results.filter((result) => result.sampleId === id);
       return <section key={id} className="benchmark-sample-results">
         <h3>{results[0].sampleName}</h3>
-        <details><summary>この実行の正解データ</summary><pre>{results[0].truth.text}</pre>
+        {(results[0].truth.text.trim() || results[0].truth.productNames.length || results[0].truth.jans.length) ? <details><summary>この実行の正解データ</summary><pre>{results[0].truth.text}</pre>
           <p>商品名: {results[0].truth.productNames.join(' / ') || '未登録'}</p><p>JAN: {results[0].truth.jans.join(' / ') || '未登録'}</p>
-        </details>
+        </details> : null}
         <div className="benchmark-columns">{results.map((result) => <article className="benchmark-result-card" key={result.engine.id}>
           <h4>{result.engine.label}</h4>
           <p className={`benchmark-status-${result.status}`}>{result.status === 'success' ? '完了' : result.status === 'cancelled' ? '中止' : 'エラー'}</p>
           {result.error && <p>{result.error}</p>}
-          <AccuracyValues accuracy={result.accuracy} />
+          {result.accuracy && <AccuracyValues accuracy={result.accuracy} />}
           <dl className="benchmark-timings">
             <div><dt>初期化</dt><dd>{milliseconds(result.timings.initializationMs)}</dd></div>
             <div><dt>認識</dt><dd>{milliseconds(result.timings.recognitionMs)}</dd></div>
             <div><dt>総所要</dt><dd>{milliseconds(result.timings.totalMs)}</dd></div>
           </dl>
           {result.status === 'success' && <>
-            <p className="benchmark-muted">下線: 挿入 / 二重下線: 置換 / 取り消し線: 欠落（正解の文字を表示）</p>
-            <HighlightedText result={result} />
-            <details><summary>OCR原文</summary><pre>{result.text}</pre></details>
+            {result.truth.text.trim() ? <>
+              <p className="benchmark-muted">下線: 挿入 / 二重下線: 置換 / 取り消し線: 欠落（正解の文字を表示）</p>
+              <HighlightedText result={result} />
+              <details><summary>OCR原文</summary><pre>{result.text}</pre></details>
+            </> : <><p className="benchmark-muted">OCR原文 · 正解テキスト未登録（差分は表示しません）</p><pre aria-label={`${result.engine.label}のOCR原文`}>{result.text || '認識された文字はありません。'}</pre></>}
           </>}
           <details><summary>モデル・前処理・入力条件</summary>
             <p>{result.engine.model}</p><p>{result.engine.preprocessing}</p>

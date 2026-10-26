@@ -65,7 +65,13 @@ describe('ベンチマーク実行条件', () => {
   it('正解未登録・JAN形式・未対応の分割を検証する', async () => {
     const input = sample();
     input.truth.text = '';
-    expect(validateTruth(input)).toContain('正解テキスト');
+    expect(validateTruth(input)).toBeNull();
+    const run = await runBenchmark({ samples: [input], engineIds: ['tesseract'],
+      createEngine: async () => ({ recognize: async () => ({ text: '牛乳' }), dispose: async () => undefined }),
+      signal: new AbortController().signal,
+    });
+    expect(run.results[0]).toMatchObject({ status: 'success', text: '牛乳', truth: { text: '' } });
+    expect(run.results[0].accuracy).toBeUndefined();
     input.truth.text = '牛乳';
     input.truth.jans = ['１２３４５６７８'];
     expect(validateTruth(input)).toContain('半角数字');

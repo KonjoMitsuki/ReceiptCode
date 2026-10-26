@@ -39,4 +39,12 @@ describe('OCRベンチマークの厳密評価', () => {
     expect(aggregateAccuracy([first, second]).cer).toBe(0.2);
     expect(aggregateAccuracy([]).cer).toBeNull();
   });
+
+  it('正解テキストを省略し、JANや商品名だけを登録してもCERを計算しない', () => {
+    const accuracy = evaluate({ text: '', jans: ['4901234567894'], productNames: ['牛乳'] }, '牛乳\n4901234567894');
+    expect(accuracy.cer).toBeNull();
+    expect(accuracy.janAccuracy).toBe(1);
+    expect(accuracy.productAccuracy).toBe(1);
+    expect(aggregateAccuracy([accuracy]).cer).toBeNull();
+  });
 });
